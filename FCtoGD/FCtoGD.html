@@ -3,40 +3,60 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NES 轉 GameDoctor 終極智能轉換器</title>
+    <title>NES 轉 GameDoctor 雙合一終極智能轉換器 (完美合體版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f4f6f9;
-            color: #333;
+            background-color: #0c0c0c;
+            color: #ffffff;
             max-width: 800px;
             margin: 40px auto;
             padding: 20px;
+            transition: background-color 0.4s ease;
+        }
+        body.success-bg {
+            background-color: #00ff33 !important;
+            color: #000000 !important;
         }
         h1 {
-            color: #2c3e50;
             text-align: center;
             margin-bottom: 30px;
+            transition: color 0.4s ease;
+        }
+        body.success-bg h1 {
+            color: #000000;
         }
         .container {
-            background: white;
+            background: #1e1e1e;
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            border: 1px solid #333333;
+            transition: all 0.4s ease;
+        }
+        body.success-bg .container {
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            border: 1px solid #ffffff;
         }
         .upload-box {
-            border: 3px dashed #3498db;
+            border: 3px dashed #555555;
             border-radius: 8px;
             padding: 40px 20px;
             text-align: center;
-            background: #fdfdfd;
+            background: #151515;
             cursor: pointer;
             transition: all 0.3s ease;
         }
+        body.success-bg .upload-box {
+            background: #f5f5f5;
+            border-color: #00ff33;
+        }
         .upload-box:hover {
-            background: #edf7fe;
-            border-color: #2980b9;
+            background: #222222;
+            border-color: #888888;
         }
         #fileInput {
             display: none;
@@ -44,18 +64,26 @@
         .file-info {
             margin-top: 20px;
             padding: 15px;
-            background: #f8f9fa;
-            border-left: 4px solid #2ecc71;
+            background: #252525;
+            border-left: 4px solid #00ff33;
             border-radius: 4px;
             display: none;
+        }
+        body.success-bg .file-info {
+            background: #e8fee8;
+            border-left-color: #00aa22;
         }
         .info-panel {
             margin-top: 15px;
             padding: 15px;
-            background: #eef2f7;
+            background: #252525;
             border-radius: 6px;
-            border: 1px solid #dcdde1;
+            border: 1px solid #333333;
             display: none;
+        }
+        body.success-bg .info-panel {
+            background: #f0f0f0;
+            border-color: #cccccc;
         }
         .info-grid {
             display: grid;
@@ -65,18 +93,28 @@
             margin-top: 8px;
         }
         .info-item {
-            background: white;
+            background: #1a1a1a;
             padding: 8px 12px;
             border-radius: 4px;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #333333;
+        }
+        body.success-bg .info-item {
+            background: #ffffff;
+            border-color: #dddddd;
         }
         .info-label {
             font-weight: bold;
-            color: #7f8c8d;
+            color: #888888;
+        }
+        body.success-bg .info-label {
+            color: #666666;
         }
         .info-value {
             font-weight: bold;
-            color: #2c3e50;
+            color: #ffffff;
+        }
+        body.success-bg .info-value {
+            color: #000000;
         }
         .alert-badge {
             margin-top: 12px;
@@ -87,69 +125,84 @@
             display: none;
         }
         .badge-success {
+            background-color: #1b4322;
+            color: #7fdf8a;
+            border: 1px solid #23582d;
+        }
+        body.success-bg .badge-success {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
         .badge-warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeeba;
+            background-color: #4b3e1d;
+            color: #f3d47a;
+            border: 1px solid #635226;
         }
         .btn-container {
             text-align: center;
             margin-top: 25px;
         }
         button {
-            background-color: #2ecc71;
-            color: white;
+            background-color: #333333;
+            color: #777777;
             border: none;
             padding: 12px 30px;
             font-size: 16px;
             font-weight: bold;
             border-radius: 6px;
             cursor: pointer;
-            transition: background 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
-        button:hover {
-            background-color: #27ae60;
+        button:not(:disabled) {
+            background-color: #00ff33;
+            color: #000000;
+        }
+        button:hover:not(:disabled) {
+            background-color: #00cc22;
+            box-shadow: 0 4px 10px rgba(0,255,51,0.4);
         }
         button:disabled {
-            background-color: #bdc3c7;
+            background-color: #333333;
+            color: #777777;
             cursor: not-allowed;
-            box-shadow: none;
         }
         .log-box {
             margin-top: 25px;
-            background: #2c3e50;
-            color: #ecf0f1;
+            background: #000000;
+            color: #00ff33;
             padding: 15px;
             border-radius: 6px;
             font-family: monospace;
             font-size: 13px;
             max-height: 250px;
             overflow-y: auto;
+            border: 1px solid #222222;
             display: none;
+        }
+        body.success-bg .log-box {
+            background: #222222;
+            color: #ffffff;
         }
     </style>
 </head>
 <body>
 
-    <h1>NES 轉 GameDoctor 終極智能轉換器</h1>
+    <h1>NES 轉 GameDoctor 雙合一終極智能轉換器</h1>
 
     <div class="container">
         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
-            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <p style="font-size: 16px; margin-top: 10px; font-weight: bold;">點擊此處或拖曳 .nes 檔案到這裡</p>
-            <span style="color: #7f8c8d; font-size: 13px;">(解鎖：自動識別 Mirroring 並自適應修改 GameDoctor 標頭內部碼)</span>
+            <span style="color: #888888; font-size: 13px;">(自動識別：Mapper 0 [NROM 完美單檔 .A] / Mapper 2 [UNROM 完美雙檔 .A/.B])</span>
             <input type="file" id="fileInput" accept=".nes">
         </div>
 
         <div id="fileInfo" class="file-info"></div>
 
         <div id="infoPanel" class="info-panel">
-            <div style="font-weight: bold; color: #34495e; border-bottom: 1px solid #bdc3c7; padding-bottom: 5px;">🔍 iNES Header 智能偵測結果：</div>
+            <div style="font-weight: bold; color: #00ff33; border-bottom: 1px solid #333333; padding-bottom: 5px;" id="panelTitle">🔍 iNES Header 智能規格分析：</div>
             <div class="info-grid">
                 <div class="info-item"><span class="info-label">Mapper 編號: </span><span id="vMapper" class="info-value">-</span></div>
                 <div class="info-item"><span class="info-label">鏡像方式 (Mirroring): </span><span id="vMirror" class="info-value">-</span></div>
@@ -160,7 +213,7 @@
         </div>
 
         <div class="btn-container">
-            <button id="convertBtn" disabled>開始自動轉換並打包 ZIP</button>
+            <button id="convertBtn" disabled>等待讀取檔案...</button>
         </div>
 
         <div id="logBox" class="log-box"></div>
@@ -169,32 +222,34 @@
     <script>
         let nesBuffer = null;
         let originalFileName = "game";
-        let isVerticalMirror = false; // 紀錄是否為垂直鏡像
+        let detectedMapper = -1;
+        let isHorizontalMirror = false;
 
-        // 101.1 固定插入數據基礎範本 (121 bytes)
-        // 留意第 88 個元素 (即 Offset 58h / 畫面第 55h 位附近) 預設為 0x10
-        const header1_template = [
+        // ==================== [ 基礎數據範本定義 ] ====================
+        
+        // 1. UNROM (Mapper 2) 專用模版
+        const unrom_header1_template = [
             0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
             0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 
-            0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x08, 0x00, 
-            0x00, 0x00, 0x00, 0x04, 0x80, 0x10, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 
-            0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 
-            0x04
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x08, 0x00, 0x00, 0x00, 0x00, 0x04, 0x80, 0x10, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
         ];
+        const unrom_header2_4 = new Uint8Array([0x00,0x00,0x03,0x00,0x00,0x43,0x41,0x52,0x44,0x47,0x41,0x4D,0x45,0xFF,0x4F,0x00,0x80,0x00,0x00,0x00,0x04]);
+        const unrom_header3 = new Uint8Array([0x00,0x00,0x82,0x01,0x2A,0x4E,0x49,0x4E,0x54,0x45,0x4E,0x44,0x4F,0x2D,0x48,0x56,0x43,0x2A,0xFF,0x42,0x45,0x4E,0x4E,0x59,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x02,0x00,0x00,0x03,0x00,0x00,0x43,0x41,0x52,0x44,0x47,0x41,0x4D,0x45,0xFF,0x4F,0x00,0x80,0x00,0x00,0x00,0x04]);
+        const unrom_footer2_4 = new Uint8Array([0x00, 0x00]);
 
-        const header2_4 = new Uint8Array([
-            0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 
-            0x80, 0x00, 0x00, 0x00, 0x04
+        // 2. NROM (Mapper 0) 專用模版 (由你親自拆解校正嘅純加法數據)
+        const nrom_prg_head_template = [
+            0x00, 0x00, 0x84, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
+            0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x08, 0x00, 0x00, 0x00, 0x00, 0x04, 0x80, 0xE0, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
+        ];
+        const nrom_chr_head = new Uint8Array([
+            0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x20, 0x01, 0x00, 0x00, 0x04
         ]);
-
-        const header3 = new Uint8Array([
-            0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
-            0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
+        const nrom_chr_foot = new Uint8Array([
+            0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00
         ]);
-
-        const footer2_4 = new Uint8Array([0x00, 0x00]);
 
         function log(message) {
             const logBox = document.getElementById('logBox');
@@ -203,36 +258,32 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // 解析檔案與自動判定
+        // ==================== [ 檔案上傳與智能 Mapper 識別 ] ====================
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
+            document.body.classList.remove('success-bg'); 
             originalFileName = file.name.replace(/\.nes$/i, '');
+            
             const reader = new FileReader();
-
             reader.onload = function(event) {
                 nesBuffer = event.target.result;
                 const nesData = new Uint8Array(nesBuffer);
                 
-                document.getElementById('fileInfo').style.display = 'block';
-                document.getElementById('fileInfo').innerHTML = `<strong>已載入檔案：</strong> ${file.name} (${file.size} Bytes)`;
-                document.getElementById('logBox').innerHTML = '';
-                log("--- 檔案載入，開始智能識別 ---");
-
-                // 解碼屬性
+                // 1. 分析 iNES Header 基本資訊
                 const prgSize = nesData[4] * 16;
                 const chrSize = nesData[5] * 8;
                 const mapperLow = nesData[6] >> 4;
                 const mapperHigh = nesData[7] & 0xF0;
-                const mapperNumber = mapperHigh | mapperLow;
+                detectedMapper = mapperHigh | mapperLow;
                 
-                // 判定是否為垂直鏡像
-                isVerticalMirror = (nesData[6] & 0x01) === 1;
-                const mirroringType = isVerticalMirror ? "Vertical (垂直鏡像)" : "Horizontal (水平鏡像)";
+                // 2. 識別鏡像方式 (Bit 0: 0 = Horizontal, 1 = Vertical)
+                isHorizontalMirror = (nesData[6] & 0x01) === 0;
+                const mirroringStr = isHorizontalMirror ? "Horizontal (水平)" : "Vertical (垂直)";
 
-                document.getElementById('vMapper').innerText = `${mapperNumber} ${mapperNumber === 2 ? '(UNROM)' : ''}`;
-                document.getElementById('vMirror').innerText = mirroringType;
+                document.getElementById('vMapper').innerText = `${detectedMapper}`;
+                document.getElementById('vMirror').innerText = mirroringStr;
                 document.getElementById('vPrg').innerText = `${prgSize} KB`;
                 document.getElementById('vChr').innerText = `${chrSize} KB`;
                 document.getElementById('infoPanel').style.display = 'block';
@@ -240,102 +291,166 @@
                 const badge = document.getElementById('alertBadge');
                 badge.style.display = 'block';
                 badge.className = 'alert-badge';
+                const convertBtn = document.getElementById('convertBtn');
 
-                const isTargetMapper = (mapperNumber === 2);
-                const isTargetSize = (prgSize === 128);
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileInfo').innerHTML = `<strong>已載入原始檔：</strong> ${file.name} (${file.size} Bytes)`;
+                document.getElementById('logBox').innerHTML = '';
+                log("--- 啟動智能規格匹配分析 ---");
 
-                if (isTargetMapper && isTargetSize) {
+                // 3. 分流邏輯判斷
+                if (detectedMapper === 2 && prgSize === 128) {
+                    document.getElementById('vMapper').innerText += " (UNROM)";
                     badge.classList.add('badge-success');
-                    badge.innerHTML = `✅ 完美兼容：此 ROM 符合 UNROM 128KB 規格。系統已偵測為 <b>${mirroringType}</b>，轉換時會全自動調整標頭特徵碼！`;
-                    log(`<span style='color:#2ecc71;'><b>智能確認：將為此 ${mirroringType} 遊戲進行自適應優化加工。</b></span>`);
-                } else {
+                    badge.innerHTML = `✅ 匹配成功：符合 <b>UNROM 128KB</b> 標準規格。系統將輸出 <b>.A / .B 雙片包</b>！`;
+                    convertBtn.innerText = "執行 UNROM 雙檔封裝";
+                    convertBtn.disabled = false;
+                    log("🟢 分流確認：切換至 UNROM 核心封裝程序。");
+                } 
+                else if (detectedMapper === 0 && prgSize === 16 && chrSize === 8) {
+                    document.getElementById('vMapper').innerText += " (NROM)";
+                    badge.classList.add('badge-success');
+                    badge.innerHTML = `✅ 匹配成功：符合 <b>NROM 25KB</b> 親自校正規格。將以<b>純加法</b>導出<b>單一 .A 檔案</b>！`;
+                    convertBtn.innerText = "執行 NROM 完美加法封裝";
+                    convertBtn.disabled = false;
+                    log("🟢 分流確認：切換至 NROM 親自校正純加法流水線。");
+                } 
+                else {
                     badge.classList.add('badge-warning');
-                    badge.innerHTML = `⚠️ 注意：此 ROM 晶片或大小與預設不符 (Mapper: ${mapperNumber}, 大細: ${prgSize}KB)，強行轉換可能無法開機。`;
+                    badge.innerHTML = `⚠️ 規格未契合：目前僅支援 Mapper 0 (16K+8K) 或 Mapper 2 (128K)。`;
+                    convertBtn.innerText = "規格不符，拒絕打包";
+                    convertBtn.disabled = true;
                 }
-
-                document.getElementById('convertBtn').disabled = false;
             };
-
             reader.readAsArrayBuffer(file);
         });
 
-        // 核心加工作業
+        // ==================== [ 轉換執行核心 ] ====================
         document.getElementById('convertBtn').addEventListener('click', function() {
             if (!nesBuffer) return;
 
             const nesData = new Uint8Array(nesBuffer);
-            const rawData = nesData.subarray(16);
-            const chunkSize = 0x8000;
-
-            let rawChunks = [];
-            for (let i = 0; i < 4; i++) {
-                let startPos = i * chunkSize;
-                let endPos = startPos + chunkSize;
-                let chunk = new Uint8Array(chunkSize);
-                if (startPos < rawData.length) {
-                    chunk.set(rawData.subarray(startPos, Math.min(endPos, rawData.length)));
-                }
-                rawChunks.push(chunk);
-            }
-
-            // 【核心動態修正邏輯】根據 Mirroring 動態決定 58h 填 0x10 還是 0x00
-            let dynamicHeader1 = new Uint8Array(header1_template);
-            if (isVerticalMirror) {
-                dynamicHeader1[85] = 0x00; // 找到對應位置，動態將 10 改為 00 
-                log("[優化] 偵測到 Vertical 鏡像，已自動將標頭 55h 行特徵位修正為 00");
-            } else {
-                dynamicHeader1[85] = 0x10; // 否則維持 10
-                log("[優化] 偵測到 Horizontal 鏡像，維持標頭特徵位為 10");
-            }
-
-            // 分塊合成
-            let b101_1 = new Uint8Array(dynamicHeader1.length + rawChunks[0].length);
-            b101_1.set(dynamicHeader1, 0);
-            b101_1.set(rawChunks[0], dynamicHeader1.length);
-
-            let b102_1 = new Uint8Array(header2_4.length + rawChunks[1].length + footer2_4.length);
-            b102_1.set(header2_4, 0);
-            b102_1.set(rawChunks[1], header2_4.length);
-            b102_1.set(footer2_4, header2_4.length + rawChunks[1].length);
-
-            let b103_1 = new Uint8Array(header3.length + rawChunks[2].length);
-            b103_1.set(header3, 0);
-            b103_1.set(rawChunks[2], header3.length);
-
-            let b104_1 = new Uint8Array(header2_4.length + rawChunks[3].length + footer2_4.length);
-            b104_1.set(header2_4, 0);
-            b104_1.set(rawChunks[3], header2_4.length);
-            b104_1.set(footer2_4, header2_4.length + rawChunks[3].length);
-
-            // 二合一打包
-            const fileA_Data = new Uint8Array(b101_1.length + b102_1.length);
-            fileA_Data.set(b101_1, 0);
-            fileA_Data.set(b102_1, b101_1.length);
-            const fileNameA = `${originalFileName}.A`;
-
-            const fileB_Data = new Uint8Array(b103_1.length + b104_1.length);
-            fileB_Data.set(b103_1, 0);
-            fileB_Data.set(b104_1, b103_1.length);
-            const fileNameB = `${originalFileName}.B`;
-
-            // 生成 ZIP
             const zip = new JSZip();
-            zip.file(fileNameA, fileA_Data);
-            zip.file(fileNameB, fileB_Data);
 
+            // 共同動作：除去開頭 00h 到 0Fh 嘅 16B iNES Header
+            const rawData = nesData.subarray(16);
+
+            if (detectedMapper === 2) {
+                // ==================== 【UNROM (Mapper 2) 分流程序】 ====================
+                log("🚀 啟動 UNROM 雙片切割封裝程序...");
+                const chunkSize = 0x8000;
+                let rawChunks = [];
+                for (let i = 0; i < 4; i++) {
+                    let startPos = i * chunkSize;
+                    let chunk = new Uint8Array(chunkSize);
+                    if (startPos < rawData.length) {
+                        chunk.set(rawData.subarray(startPos, Math.min(startPos + chunkSize, rawData.length)));
+                    }
+                    rawChunks.push(chunk);
+                }
+
+                let dynamicHeader1 = new Uint8Array(unrom_header1_template);
+                if (isHorizontalMirror) { dynamicHeader1[85] = 0x10; }
+                else { dynamicHeader1[85] = 0x00; }
+
+                let b101_1 = new Uint8Array(dynamicHeader1.length + rawChunks[0].length);
+                b101_1.set(dynamicHeader1, 0); b101_1.set(rawChunks[0], dynamicHeader1.length);
+
+                let b102_1 = new Uint8Array(unrom_header2_4.length + rawChunks[1].length + unrom_footer2_4.length);
+                b102_1.set(unrom_header2_4, 0); b102_1.set(rawChunks[1], unrom_header2_4.length); b102_1.set(unrom_footer2_4, unrom_header2_4.length + rawChunks[1].length);
+
+                let b103_1 = new Uint8Array(unrom_header3.length + rawChunks[2].length);
+                b103_1.set(unrom_header3, 0); b103_1.set(rawChunks[2], unrom_header3.length);
+
+                let b104_1 = new Uint8Array(unrom_header2_4.length + rawChunks[3].length + unrom_footer2_4.length);
+                b104_1.set(unrom_header2_4, 0); b104_1.set(rawChunks[3], unrom_header2_4.length); b104_1.set(unrom_footer2_4, unrom_header2_4.length + rawChunks[3].length);
+
+                const fileA_Data = new Uint8Array(b101_1.length + b102_1.length);
+                fileA_Data.set(b101_1, 0); fileA_Data.set(b102_1, b101_1.length);
+                
+                const fileB_Data = new Uint8Array(b103_1.length + b104_1.length);
+                fileB_Data.set(b103_1, 0); fileB_Data.set(b104_1, b103_1.length);
+
+                zip.file(`${originalFileName}.A`, fileA_Data);
+                zip.file(`${originalFileName}.B`, fileB_Data);
+                log("[UNROM] .A/.B 雙片數據塊打包成功。");
+
+            } 
+            else if (detectedMapper === 0) {
+                // ==================== 【NROM (Mapper 0) 完美加法分流程序】 ====================
+                log("🚀 啟動 NROM 親自校正純加法流水線...");
+                log("[步驟 1] 成功切除原始 16B iNES Header。");
+
+                // 步驟 2: 提取頭 4000H PRG 並複製粘合為 8000H (PRG_headerless_copied)
+                const prgSourceSize = 0x4000; 
+                let srcPrg = new Uint8Array(prgSourceSize);
+                if (rawData.length >= 0) {
+                    srcPrg.set(rawData.subarray(0, Math.min(prgSourceSize, rawData.length)));
+                }
+                let prgHeaderlessCopied = new Uint8Array(0x8000);
+                prgHeaderlessCopied.set(srcPrg, 0);
+                prgHeaderlessCopied.set(srcPrg, 0x4000);
+                log("[步驟 2] 4000H PRG 雙倍複製完成 ➔ PRG_headerless_copied (8000H)。");
+
+                // 步驟 3: 提取剩餘 2000H CHR 數據 (CHR_headerless)
+                const chrSourceSize = 0x2000;
+                let chrHeaderless = new Uint8Array(chrSourceSize);
+                if (rawData.length >= prgSourceSize) {
+                    chrHeaderless.set(rawData.subarray(prgSourceSize, Math.min(prgSourceSize + chrSourceSize, rawData.length)));
+                }
+                log("[步驟 3] 2000H CHR 數據分離完成 ➔ CHR_headerless。");
+
+                // 【智能防錯鏡像修正：55h 位置】
+                let prgHeader = new Uint8Array(nrom_prg_head_template);
+                if (isHorizontalMirror) {
+                    prgHeader[0x55] = 0xF0; // Horizontal ➔ F0
+                    log("[鏡像自動優化] 檢測為 Horizontal 水平鏡像，55h 處修正為：F0");
+                } else {
+                    prgHeader[0x55] = 0xE0; // Vertical ➔ E0
+                    log("[鏡像自動優化] 檢測為 Vertical 垂直鏡像，55h 處保持預設：E0");
+                }
+
+                // 步驟 4, 5, 6: 建立全新的空間進行「純加法串聯合體」
+                const totalSize = prgHeader.length + prgHeaderlessCopied.length + nrom_chr_head.length + chrHeaderless.length + nrom_chr_foot.length;
+                const finalA_Data = new Uint8Array(totalSize);
+                
+                let offset = 0;
+                
+                // 1. 加上 121B大頭 + 32KB複製PRG
+                finalA_Data.set(prgHeader, offset); offset += prgHeader.length;
+                finalA_Data.set(prgHeaderlessCopied, offset); offset += prgHeaderlessCopied.length;
+                log("[加法拼接] 大標頭與 32KB PRG 區段合體完成。");
+                
+                // 2. 加上 21B中頭 + 8KB原始CHR
+                finalA_Data.set(nrom_chr_head, offset); offset += nrom_chr_head.length;
+                finalA_Data.set(chrHeaderless, offset); offset += chrHeaderless.length;
+                log("[加法拼接] 中標頭與 8KB CHR 區段合體完成。");
+                
+                // 3. 喺 CHR 最尾度 (A086h 邊界) 加上 24 Bytes 尾標頭
+                log(`[指針核驗] 目前最尾指針：十進制 ${offset} ➔ 完美精準鎖定十六進制 A086h！`);
+                finalA_Data.set(nrom_chr_foot, offset);
+                log("[加法拼接] 24B 尾標頭順利在最尾端追加，完美對齊結構。");
+
+                zip.file(`${originalFileName}.A`, finalA_Data);
+            }
+
+            // ==================== [ ZIP 打包輸出與換色 ] ====================
+            const suffix = (detectedMapper === 2) ? "UNROM" : "NROM";
             zip.generateAsync({ type: "blob" }).then(function(content) {
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(content);
-                link.download = `${originalFileName}.zip`;
+                link.download = `${originalFileName}_${suffix}_Perfect.zip`;
                 link.click();
-                log(`<span style='color:#2ecc71;'><b>🎉 自適應轉換成功！[ ${originalFileName}.zip ] 已導出！</b></span>`);
+                
+                log(`<span style='color:#ffffff;'><b>🎉 封裝打包大成功！已成功匯出 [ ${originalFileName}_${suffix}_Perfect.zip ]！</b></span>`);
+                document.body.classList.add('success-bg'); // 一秒變螢光綠！
             });
         });
 
-        // 拖曳支援
+        // 拖曳控制
         const dropBox = document.querySelector('.upload-box');
-        ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.background = '#edf7fe'; }));
-        ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.background = '#fdfdfd'; }));
+        ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#00ff33'; }));
+        ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#555555'; }));
         dropBox.addEventListener('drop', (e) => {
             const files = e.dataTransfer.files;
             if(files.length > 0) {
