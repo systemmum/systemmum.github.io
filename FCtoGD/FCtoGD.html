@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NES NROM 轉 GameDoctor 智能轉換器</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        /* 預設為極黑背景，轉換成功後會透過 JS 加載 .success-bg 轉為螢光綠 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0c0c0c;
+            color: #ffffff;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            transition: background-color 0.5s ease;
+        }
+        /* 轉換完成後的螢光綠背景樣式 */
+        body.success-bg {
+            background-color: #00ff33 !important;
+            color: #000000 !important; /* 轉為螢光綠時文字轉黑以保持清晰度 */
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            transition: color 0.5s ease;
+        }
+        body.success-bg h1 {
+            color: #000000;
+        }
+        .container {
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            border: 1px solid #333333;
+            transition: all 0.5s ease;
+        }
+        body.success-bg .container {
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            border: 1px solid #ffffff;
+        }
+        .upload-box {
+            border: 3px dashed #555555;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #151515;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        body.success-bg .upload-box {
+            background: #f5f5f5;
+            border-color: #00ff33;
+        }
+        .upload-box:hover {
+            background: #222222;
+            border-color: #888888;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #252525;
+            border-left: 4px solid #00ff33;
+            border-radius: 4px;
+            display: none;
+        }
+        body.success-bg .file-info {
+            background: #e8fee8;
+            border-left-color: #00aa22;
+        }
+        /* 智能偵測面板 */
+        .info-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: #252525;
+            border-radius: 6px;
+            border: 1px solid #333333;
+            display: none;
+        }
+        body.success-bg .info-panel {
+            background: #f0f0f0;
+            border-color: #cccccc;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        .info-item {
+            background: #1a1a1a;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #333333;
+            transition: all 0.5s ease;
+        }
+        body.success-bg .info-item {
+            background: #ffffff;
+            border-color: #dddddd;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #888888;
+        }
+        body.success-bg .info-label {
+            color: #666666;
+        }
+        .info-value {
+            font-weight: bold;
+            color: #ffffff;
+        }
+        body.success-bg .info-value {
+            color: #000000;
+        }
+        /* 提示 Badge */
+        .alert-badge {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            display: none;
+        }
+        .badge-success {
+            background-color: #1b4322;
+            color: #7fdf8a;
+            border: 1px solid #23582d;
+        }
+        body.success-bg .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .badge-warning {
+            background-color: #4b3e1d;
+            color: #f3d47a;
+            border: 1px solid #635226;
+        }
+        body.success-bg .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 25px;
+        }
+        button {
+            background-color: #444444;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        button:not(:disabled) {
+            background-color: #00ff33;
+            color: #000000;
+        }
+        button:hover:not(:disabled) {
+            background-color: #00cc22;
+            box-shadow: 0 4px 10px rgba(0,255,51,0.4);
+        }
+        button:disabled {
+            background-color: #333333;
+            color: #777777;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .log-box {
+            margin-top: 25px;
+            background: #000000;
+            color: #00ff33;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #222222;
+            display: none;
+        }
+        body.success-bg .log-box {
+            background: #222222;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>NES NROM (Mapper 0) 智能轉換器</h1>
+
+    <div class="container">
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p style="font-size: 16px; margin-top: 10px; font-weight: bold;">點擊此處或拖曳 NROM (.nes) 檔案到這裡</p>
+            <span style="color: #888888; font-size: 13px;">(規格：1x16K PRG + 1x8K CHR | 串聯單檔輸出 | 完工底色轉換)</span>
+            <input type="file" id="fileInput" accept=".nes">
+        </div>
+
+        <div id="fileInfo" class="file-info"></div>
+
+        <div id="infoPanel" class="info-panel">
+            <div id="panelTitle" style="font-weight: bold; color: #00ff33; border-bottom: 1px solid #333333; padding-bottom: 5px;">🔍 iNES Header 智能偵測結果：</div>
+            <div class="info-grid">
+                <div class="info-item"><span class="info-label">Mapper 編號: </span><span id="vMapper" class="info-value">-</span></div>
+                <div class="info-item"><span class="info-label">鏡像方式 (Mirroring): </span><span id="vMirror" class="info-value">-</span></div>
+                <div class="info-item"><span class="info-label">PRG ROM 大細: </span><span id="vPrg" class="info-value">-</span></div>
+                <div class="info-item"><span class="info-label">CHR ROM 大細: </span><span id="vChr" class="info-value">-</span></div>
+            </div>
+            <div id="alertBadge" class="alert-badge"></div>
+        </div>
+
+        <div class="btn-container">
+            <button id="convertBtn" disabled>開始自動串聯轉換並打包 ZIP</button>
+        </div>
+
+        <div id="logBox" class="log-box"></div>
+    </div>
+
+    <script>
+        let nesBuffer = null;
+        let originalFileName = "game";
+        let isVerticalMirror = false; 
+
+        // 101.1 固定插入數據 (121 bytes) - 位置 85 (即 55h 行特徵位) 預設為 0xF0
+        const header1_template = [
+            0x00, 0x00, 0x84, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
+            0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 
+            0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x08, 0x00, 
+            0x00, 0x00, 0x00, 0x04, 0x80, 0xF0, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 
+            0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 
+            0x04
+        ];
+
+        // 102.1 固定插入數據 (21 bytes)
+        const header2 = new Uint8Array([
+            0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 
+            0x20, 0x01, 0x00, 0x00, 0x04
+        ]);
+
+        // 103.1 固定插入數據 (24 bytes)
+        const header3 = new Uint8Array([
+            0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x01, 
+            0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00
+        ]);
+
+        function log(message) {
+            const logBox = document.getElementById('logBox');
+            logBox.style.display = 'block';
+            logBox.innerHTML += message + '<br>';
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            // 重設背景色（防止連續轉換時維持綠色）
+            document.body.classList.remove('success-bg');
+
+            originalFileName = file.name.replace(/\.nes$/i, '');
+            const reader = new FileReader();
+
+            reader.onload = function(event) {
+                nesBuffer = event.target.result;
+                const nesData = new Uint8Array(nesBuffer);
+                
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileInfo').innerHTML = `<strong>已載入檔案：</strong> ${file.name} (${file.size} Bytes)`;
+                document.getElementById('logBox').innerHTML = '';
+                log("--- 檔案載入完畢，開始 NROM Header 智能識別 ---");
+
+                // 解讀基本規格
+                const prgSize = nesData[4] * 16;
+                const chrSize = nesData[5] * 8;
+                const mapperLow = nesData[6] >> 4;
+                const mapperHigh = nesData[7] & 0xF0;
+                const mapperNumber = mapperHigh | mapperLow;
+                
+                isVerticalMirror = (nesData[6] & 0x01) === 1;
+                const mirroringType = isVerticalMirror ? "Vertical (垂直)" : "Horizontal (水平)";
+
+                document.getElementById('vMapper').innerText = `${mapperNumber} ${mapperNumber === 0 ? '(NROM)' : ''}`;
+                document.getElementById('vMirror').innerText = mirroringType;
+                document.getElementById('vPrg').innerText = `${prgSize} KB`;
+                document.getElementById('vChr').innerText = `${chrSize} KB`;
+                document.getElementById('infoPanel').style.display = 'block';
+
+                const badge = document.getElementById('alertBadge');
+                badge.style.display = 'block';
+                badge.className = 'alert-badge';
+
+                const isTargetMapper = (mapperNumber === 0);
+                const isTargetPRG = (prgSize === 16);
+                const isTargetCHR = (chrSize === 8);
+
+                if (isTargetMapper && isTargetPRG && isTargetCHR) {
+                    badge.classList.add('badge-success');
+                    badge.innerHTML = `✅ 規格完美契合：偵測為標準 NROM (16K PRG + 8K CHR)。鏡像為 <b>${mirroringType}</b>，系統將在轉換時自動適應修正特徵碼！`;
+                    log(`<span style='color:#00ff33;'><b>智能確認：規格完全正確，準備進行單檔串聯合包。</b></span>`);
+                } else {
+                    badge.classList.add('badge-warning');
+                    badge.innerHTML = `⚠️ 規格提示：此 ROM 與標準 25KB NROM (Mapper 0, 16K PRG, 8K CHR) 不完全吻合，強行依此模板轉換可能導致畫面錯誤。`;
+                    log("<span style='color:#ffcc00;'><b>智能提示：請留意，此 ROM 數據特徵與當前預設模板有出入。</b></span>");
+                }
+
+                document.getElementById('convertBtn').disabled = false;
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+
+        // 轉換與串聯單檔
+        document.getElementById('convertBtn').addEventListener('click', function() {
+            if (!nesBuffer) return;
+
+            const nesData = new Uint8Array(nesBuffer);
+            const rawData = nesData.subarray(16); // 劏走 16B 標頭
+
+            // 嚴格依照 4000h, 4000h, 2000h 大小進行斬件
+            const chunk1_Size = 0x2000; // 4000h 的一半 = 8192 Bytes (8KB)
+            const chunk2_Size = 0x2000; // 4000h 的一半 = 8192 Bytes (8KB)
+            const chunk3_Size = 0x2000; // 2000h = 8192 Bytes (8KB)
+
+            let rawChunk1 = new Uint8Array(chunk1_Size);
+            let rawChunk2 = new Uint8Array(chunk2_Size);
+            let rawChunk3 = new Uint8Array(chunk3_Size);
+
+            // 安全複製原始數據
+            if (rawData.length >= 0) rawChunk1.set(rawData.subarray(0, Math.min(chunk1_Size, rawData.length)));
+            if (rawData.length >= chunk1_Size) rawChunk2.set(rawData.subarray(chunk1_Size, Math.min(chunk1_Size * 2, rawData.length)));
+            if (rawData.length >= chunk1_Size * 2) rawChunk3.set(rawData.subarray(chunk1_Size * 2, Math.min(chunk1_Size * 3, rawData.length)));
+
+            log(`[執行] 成功分離三組原始區塊 (8KB + 8KB + 8KB)...`);
+
+            // 【智能鏡像碼修正】Vertical = E0, Horizontal = F0
+            let dynamicHeader1 = new Uint8Array(header1_template);
+            if (isVerticalMirror) {
+                dynamicHeader1[85] = 0x00; // 先將原本範本的 0xF0 抹掉，再設定高 4 位（如果需要）
+                dynamicHeader1[85] = 0xE0; // 填入你指定的 E0
+                log("[優化] 識別為 Vertical 鏡像，標頭 55h 處已自動修正為 E0");
+            } else {
+                dynamicHeader1[85] = 0xF0; // 填入你指定的 F0
+                log("[優化] 識別為 Horizontal 鏡像，標頭 55h 處已自動修正為 F0");
+            }
+
+            // 分別加工生成 101.1, 102.1, 103.1
+            let b101_1 = new Uint8Array(dynamicHeader1.length + rawChunk1.length);
+            b101_1.set(dynamicHeader1, 0);
+            b101_1.set(rawChunk1, dynamicHeader1.length);
+
+            let b102_1 = new Uint8Array(header2.length + rawChunk2.length);
+            b102_1.set(header2, 0);
+            b102_1.set(rawChunk2, header2.length);
+
+            let b103_1 = new Uint8Array(header3.length + rawChunk3.length);
+            b103_1.set(header3, 0);
+            b103_1.set(rawChunk3, header3.length);
+
+            // 【核心變更】頭尾直接串聯合併成一個單一檔案（最尾不加 0000）
+            const finalMergedData = new Uint8Array(b101_1.length + b102_1.length + b103_1.length);
+            finalMergedData.set(b101_1, 0);
+            finalMergedData.set(b102_1, b101_1.length);
+            finalMergedData.set(b103_1, b101_1.length + b102_1.length);
+
+            const outFileName = `${originalFileName}.GD`; // 生出單檔 GameDoctor 格式
+
+            log(`[打包] 正在將三個加工件串聯合併至單一檔案 [${outFileName}]...`);
+
+            const zip = new JSZip();
+            zip.file(outFileName, finalMergedData);
+
+            zip.generateAsync({ type: "blob" }).then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `${originalFileName}_NROM.zip`;
+                link.click();
+                
+                log("<span style='color:#ffffff;'><b>🎉 串聯轉換全線完工！壓縮包已順利導出。</b></span>");
+                
+                // 【核心視覺變更】轉換成功後，將整個 body 的背景轉為螢光綠色！
+                document.body.classList.add('success-bg');
+            });
+        });
+
+        // 拖曳上傳支援
+        const dropBox = document.querySelector('.upload-box');
+        ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#00ff33'; }));
+        ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#555555'; }));
+        dropBox.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if(files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                document.getElementById('fileInput').dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+</body>
+</html>
