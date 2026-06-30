@@ -6,15 +6,21 @@
     <title>NES 轉 GameDoctor (Mapper 0,2)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #0c0c0c;
-            color: #ffffff;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            transition: background-color 0.4s ease;
-        }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #0c0c0c;
+    /* 🔴 喺呢度加上背景圖 🔴 */
+    **background-image: https://systemmum.github.io/FCtoGD/background.jpg('你張圖片嘅網址或者檔名.jpg');**
+    **background-size: cover;** /* 讓背景圖鋪滿全個畫面 */
+    **background-position: center;** /* 背景圖置中對齊 */
+    **background-attachment: fixed;** /* 滾動網頁時背景圖固定不動 */
+    
+    color: #ffffff;
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    transition: background-color 0.4s ease;
+}
         body.success-bg {
             background-color: #00ff33 !important;
             color: #000000 !important;
