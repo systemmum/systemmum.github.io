@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NES 轉 GameDoctor 智能格式轉換器 (Pro)</title>
+    <title>NES 轉 GameDoctor 終極智能轉換器</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body {
@@ -49,7 +49,6 @@
             border-radius: 4px;
             display: none;
         }
-        /* ROM 資訊偵測面板 */
         .info-panel {
             margin-top: 15px;
             padding: 15px;
@@ -79,7 +78,6 @@
             font-weight: bold;
             color: #2c3e50;
         }
-        /* 防呆提示標籤 */
         .alert-badge {
             margin-top: 12px;
             padding: 10px;
@@ -103,7 +101,7 @@
             margin-top: 25px;
         }
         button {
-            background-color: #3498db;
+            background-color: #2ecc71;
             color: white;
             border: none;
             padding: 12px 30px;
@@ -115,7 +113,7 @@
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         button:hover {
-            background-color: #2980b9;
+            background-color: #27ae60;
         }
         button:disabled {
             background-color: #bdc3c7;
@@ -138,13 +136,13 @@
 </head>
 <body>
 
-    <h1>NES 轉 GameDoctor 智能格式轉換器</h1>
+    <h1>NES 轉 GameDoctor 終極智能轉換器</h1>
 
     <div class="container">
         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#3498db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <p style="font-size: 16px; margin-top: 10px; font-weight: bold;">點擊此處或拖曳 .nes 檔案到這裡</p>
-            <span style="color: #7f8c8d; font-size: 13px;">(新增：自動解碼 iNES Header 進行智能防呆偵測)</span>
+            <span style="color: #7f8c8d; font-size: 13px;">(解鎖：自動識別 Mirroring 並自適應修改 GameDoctor 標頭內部碼)</span>
             <input type="file" id="fileInput" accept=".nes">
         </div>
 
@@ -171,9 +169,11 @@
     <script>
         let nesBuffer = null;
         let originalFileName = "game";
+        let isVerticalMirror = false; // 紀錄是否為垂直鏡像
 
-        // 101.1 固定插入數據 (121 bytes) - 對應 UNROM Horizontal 128KB
-        const header1 = new Uint8Array([
+        // 101.1 固定插入數據基礎範本 (121 bytes)
+        // 留意第 88 個元素 (即 Offset 58h / 畫面第 55h 位附近) 預設為 0x10
+        const header1_template = [
             0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
             0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -182,7 +182,7 @@
             0x00, 0x00, 0x00, 0x04, 0x80, 0x10, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 
             0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 
             0x04
-        ]);
+        ];
 
         const header2_4 = new Uint8Array([
             0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 
@@ -203,7 +203,7 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        // 處理檔案載入與 Header 智能解析
+        // 解析檔案與自動判定
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -215,60 +215,42 @@
                 nesBuffer = event.target.result;
                 const nesData = new Uint8Array(nesBuffer);
                 
-                // 顯示檔案基本資訊
-                const fileInfo = document.getElementById('fileInfo');
-                fileInfo.style.display = 'block';
-                fileInfo.innerHTML = `<strong>已成功載入：</strong> ${file.name} (${file.size} Bytes)`;
-
-                // 清空之前的日誌
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileInfo').innerHTML = `<strong>已載入檔案：</strong> ${file.name} (${file.size} Bytes)`;
                 document.getElementById('logBox').innerHTML = '';
-                log("--- 檔案載入完畢，開始解析 iNES Header ---");
+                log("--- 檔案載入，開始智能識別 ---");
 
-                if (nesData.length < 16 || nesData[0]!==0x4E || nesData[1]!==0x45 || nesData[2]!==0x53 || nesData[3]!==0x1A) {
-                    log("<span style='color:#e74c3c;'>警告：此檔案開頭沒有 \"NES\" 魔術字串，可能不是標準的 NES 檔案！</span>");
-                }
-
-                // 核心解碼 iNES Header 邏輯
-                const prgSize = nesData[4] * 16; // Byte 4: PRG 數量 * 16 KB
-                const chrSize = nesData[5] * 8;  // Byte 5: CHR 數量 * 8 KB
-                
-                // Byte 6 & 7 計算 Mapper
+                // 解碼屬性
+                const prgSize = nesData[4] * 16;
+                const chrSize = nesData[5] * 8;
                 const mapperLow = nesData[6] >> 4;
                 const mapperHigh = nesData[7] & 0xF0;
                 const mapperNumber = mapperHigh | mapperLow;
+                
+                // 判定是否為垂直鏡像
+                isVerticalMirror = (nesData[6] & 0x01) === 1;
+                const mirroringType = isVerticalMirror ? "Vertical (垂直鏡像)" : "Horizontal (水平鏡像)";
 
-                // Byte 6 Bit 0 判斷 Mirroring
-                const mirroringType = (nesData[6] & 0x01) === 1 ? "Vertical (垂直)" : "Horizontal (水平)";
-
-                // 將數值渲染到網頁面板
                 document.getElementById('vMapper').innerText = `${mapperNumber} ${mapperNumber === 2 ? '(UNROM)' : ''}`;
                 document.getElementById('vMirror').innerText = mirroringType;
                 document.getElementById('vPrg').innerText = `${prgSize} KB`;
                 document.getElementById('vChr').innerText = `${chrSize} KB`;
                 document.getElementById('infoPanel').style.display = 'block';
 
-                // 智能防呆檢查
                 const badge = document.getElementById('alertBadge');
                 badge.style.display = 'block';
-                badge.className = 'alert-badge'; // reset
+                badge.className = 'alert-badge';
 
                 const isTargetMapper = (mapperNumber === 2);
-                const isTargetMirror = ((nesData[6] & 0x01) === 0); // 0 代表 Horizontal
                 const isTargetSize = (prgSize === 128);
 
-                if (isTargetMapper && isTargetMirror && isTargetSize) {
+                if (isTargetMapper && isTargetSize) {
                     badge.classList.add('badge-success');
-                    badge.innerHTML = "✅ 完美契合：此 ROM 確定為 UNROM Horizontal 128KB 規格，轉換後可完美生成對應磁碟格式！";
-                    log("<span style='color:#2ecc71;'><b>智能確認：規格符合，可安心進行轉換。</b></span>");
+                    badge.innerHTML = `✅ 完美兼容：此 ROM 符合 UNROM 128KB 規格。系統已偵測為 <b>${mirroringType}</b>，轉換時會全自動調整標頭特徵碼！`;
+                    log(`<span style='color:#2ecc71;'><b>智能確認：將為此 ${mirroringType} 遊戲進行自適應優化加工。</b></span>`);
                 } else {
                     badge.classList.add('badge-warning');
-                    let errorNotes = [];
-                    if (!isTargetMapper) errorNotes.push(`Mapper 係 ${mapperNumber} (期望: 2)`);
-                    if (!isTargetMirror) errorNotes.push(`鏡像係 Vertical (期望: Horizontal)`);
-                    if (!isTargetSize) errorNotes.push(`PRG 大細係 ${prgSize}KB (期望: 128KB)`);
-                    
-                    badge.innerHTML = `⚠️ 注意：偵測到此 ROM 規格不符 (${errorNotes.join('、')})。此網頁目前使用固定 UNROM 標頭數據加工，強行轉換可能導致生成檔案無法開機！`;
-                    log("<span style='color:#e67e22;'><b>智能提示：此 ROM 與當前預設轉換晶片規格不符，請留意。</b></span>");
+                    badge.innerHTML = `⚠️ 注意：此 ROM 晶片或大小與預設不符 (Mapper: ${mapperNumber}, 大細: ${prgSize}KB)，強行轉換可能無法開機。`;
                 }
 
                 document.getElementById('convertBtn').disabled = false;
@@ -277,13 +259,13 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // 核心拆分與壓縮檔下載邏輯
+        // 核心加工作業
         document.getElementById('convertBtn').addEventListener('click', function() {
             if (!nesBuffer) return;
 
             const nesData = new Uint8Array(nesBuffer);
-            const rawData = nesData.subarray(16); // 移除 16B Header
-            const chunkSize = 0x8000; // 32KB
+            const rawData = nesData.subarray(16);
+            const chunkSize = 0x8000;
 
             let rawChunks = [];
             for (let i = 0; i < 4; i++) {
@@ -291,37 +273,41 @@
                 let endPos = startPos + chunkSize;
                 let chunk = new Uint8Array(chunkSize);
                 if (startPos < rawData.length) {
-                    let sourceSub = rawData.subarray(startPos, Math.min(endPos, rawData.length));
-                    chunk.set(sourceSub);
+                    chunk.set(rawData.subarray(startPos, Math.min(endPos, rawData.length)));
                 }
                 rawChunks.push(chunk);
             }
 
-            log(`[執行] 開始為 4 份暫存件進行加工作業...`);
-            
-            // 加工 101.1
-            let b101_1 = new Uint8Array(header1.length + rawChunks[0].length);
-            b101_1.set(header1, 0);
-            b101_1.set(rawChunks[0], header1.length);
+            // 【核心動態修正邏輯】根據 Mirroring 動態決定 58h 填 0x10 還是 0x00
+            let dynamicHeader1 = new Uint8Array(header1_template);
+            if (isVerticalMirror) {
+                dynamicHeader1[85] = 0x00; // 找到對應位置，動態將 10 改為 00 
+                log("[優化] 偵測到 Vertical 鏡像，已自動將標頭 55h 行特徵位修正為 00");
+            } else {
+                dynamicHeader1[85] = 0x10; // 否則維持 10
+                log("[優化] 偵測到 Horizontal 鏡像，維持標頭特徵位為 10");
+            }
 
-            // 加工 102.1
+            // 分塊合成
+            let b101_1 = new Uint8Array(dynamicHeader1.length + rawChunks[0].length);
+            b101_1.set(dynamicHeader1, 0);
+            b101_1.set(rawChunks[0], dynamicHeader1.length);
+
             let b102_1 = new Uint8Array(header2_4.length + rawChunks[1].length + footer2_4.length);
             b102_1.set(header2_4, 0);
             b102_1.set(rawChunks[1], header2_4.length);
             b102_1.set(footer2_4, header2_4.length + rawChunks[1].length);
 
-            // 加工 103.1
             let b103_1 = new Uint8Array(header3.length + rawChunks[2].length);
             b103_1.set(header3, 0);
             b103_1.set(rawChunks[2], header3.length);
 
-            // 加工 104.1
             let b104_1 = new Uint8Array(header2_4.length + rawChunks[3].length + footer2_4.length);
             b104_1.set(header2_4, 0);
             b104_1.set(rawChunks[3], header2_4.length);
             b104_1.set(footer2_4, header2_4.length + rawChunks[3].length);
 
-            // 雙雙合併做 Side A 同 Side B
+            // 二合一打包
             const fileA_Data = new Uint8Array(b101_1.length + b102_1.length);
             fileA_Data.set(b101_1, 0);
             fileA_Data.set(b102_1, b101_1.length);
@@ -332,8 +318,7 @@
             fileB_Data.set(b104_1, b103_1.length);
             const fileNameB = `${originalFileName}.B`;
 
-            log(`[打包] 正在壓縮合併 [${fileNameA}] 同 [${fileNameB}]...`);
-            
+            // 生成 ZIP
             const zip = new JSZip();
             zip.file(fileNameA, fileA_Data);
             zip.file(fileNameB, fileB_Data);
@@ -343,23 +328,16 @@
                 link.href = URL.createObjectURL(content);
                 link.download = `${originalFileName}.zip`;
                 link.click();
-                log(`<span style='color:#2ecc71;'><b>🎉 智能轉換完成！壓縮檔 [ ${originalFileName}.zip ] 已成功導出。</b></span>`);
-            }).catch(function(err) {
-                log(`<span style='color:#e74c3c;'>打包 ZIP 失敗: ${err}</span>`);
+                log(`<span style='color:#2ecc71;'><b>🎉 自適應轉換成功！[ ${originalFileName}.zip ] 已導出！</b></span>`);
             });
         });
 
-        // 支援拖曳上傳
+        // 拖曳支援
         const dropBox = document.querySelector('.upload-box');
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropBox.addEventListener(eventName, (e) => { e.preventDefault(); dropBox.style.background = '#edf7fe'; }, false);
-        });
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropBox.addEventListener(eventName, (e) => { e.preventDefault(); dropBox.style.background = '#fdfdfd'; }, false);
-        });
+        ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.background = '#edf7fe'; }));
+        ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.background = '#fdfdfd'; }));
         dropBox.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
+            const files = e.dataTransfer.files;
             if(files.length > 0) {
                 document.getElementById('fileInput').files = files;
                 document.getElementById('fileInput').dispatchEvent(new Event('change'));
