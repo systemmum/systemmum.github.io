@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>檔案 Offset 轉換工具</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<style>
+         /* 1. 背景回歸全黑 */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #000000; 
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+      .container {
+            background: rgba(255, 255, 255, 0.6); /* 稍微提高少少白框不透明度，廢事彩虹太奪目睇唔到字 */
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            z-index: 10;
+        }
+
+  /* 讓彩虹框內的所有大字、標題更加凸顯 */
+        .container h2 {
+            color: #000000;
+            border-bottom: 2px solid rgba(0,0,0,0.15);
+        }
+        .container .description {
+            color: #111;
+            font-weight: 500;
+        }
+
+
+
+         /* 【彩色 DVD 飛字 - S型扭曲動態版】 */
+        .dvd-text {
+            position: absolute;
+            font-size: 55px; /* 稍微縮細少少，費事太長扭出畫面 */
+            font-weight: 900;
+            font-family: "Impact", "SimSun", "PMingLiU", sans-serif;
+            white-space: nowrap;
+            z-index: 1;
+            user-select: none;
+            pointer-events: none;
+            opacity: 0.85;
+            display: flex; /* 🌟 核心：用 flex 確保拆散嘅字母排成一線 */
+        }
+
+        /* 🌟 每一粒字母嘅獨立樣式，自帶 RGB 變色同立體黑邊 */
+        .dvd-char {
+            display: inline-block;
+            position: relative;
+            animation: rgb-text 6s infinite linear;
+            text-shadow: 
+                -1px -1px 0 #000,  
+                 1px -1px 0 #000,
+                -1px  1px 0 #000,
+                 1px  1px 0 #000,
+                 3px  3px 5px rgba(0, 0, 0, 0.8);
+        }
+
+        /* RGB 變色動畫 (保持不變) */
+        @keyframes rgb-text {
+            0%   { color: rgb(255, 0, 0); }
+            17%  { color: rgb(255, 255, 0); }
+            33%  { color: rgb(0, 255, 0); }
+            50%  { color: rgb(0, 255, 255); }
+            66%  { color: rgb(0, 0, 255); }
+            83%  { color: rgb(255, 0, 255); }
+            100% { color: rgb(255, 0, 0); }
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 22px;
+            border-bottom: 2px solid #eaeaea;
+            padding-bottom: 10px;
+        }
+        .description {
+            color: #666;
+            font-size: 14px;
+            line-height: 1.5;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+         .drop-zone {
+            border: 2px dashed rgba(0 ,0 ,0 , 0,4);
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #fafbfc;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            border-color: #28a745;
+            background: #f1f9f3;
+        }
+        .drop-zone p {
+            margin: 0;
+            color: #555;
+            font-size: 15px;
+        }
+
+        #status {
+            margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            background: #1e1e1e;
+            color: #39d353;
+            font-family: "Courier New", Courier, monospace;
+            padding: 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            display: none;
+            white-space: pre-wrap;
+        }
+        .btn-download {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            text-align: center;
+            text-decoration: none;
+            display: none;
+        }
+        .btn-download:hover {
+            background-color: #218838;
+
+        }
+
+    </style>
+</head>
+<body>
+/*<div id="dvdText" class="dvd-text">科王轉邦谷小PC by Henry Leung @ VGHK</div>*/
+
+
+<div class="container">
+    <h2>🚀 轉換工具 (Web 版) Beta 1</h2>
+
+    <div class="description">
+        此工具會保留(科王VCD種)前 512 Bytes Header，跳過 0x200 至 0x7FF 的區段，轉做.gd3(邦谷小PC種)。
+    </div>
+
+    <div class="drop-zone" id="dropZone">
+        <p>📂 拖放多個 <b>.CDV</b> 檔案到此處<br>或「點擊此處」選擇檔案</p>
+        <input type="file" id="fileInput" class="file-input" multiple accept=".CDV">
+    </div>
+
+    <div id="status"></div>
+
+    <button id="downloadBtn" class="btn-download">📦 下載已轉換的壓縮檔 (.zip)</button>
+
+</div>
+
+
+<script>
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const status = document.getElementById('status');
+    const downloadBtn = document.getElementById('downloadBtn');
+    
+    let zip = null;
+
+    // 點擊區域觸發 input
+    dropZone.addEventListener('click', () => fileInput.click());
+
+    // 拖曳視覺效果
+    dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+    });
+
+    // 選擇檔案觸發
+    fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+    });
+
+       // 核心處理邏輯（喺 ZIP 檔入面自動建立 fixed 資料夾）
+    function handleFiles(files) {
+        if (files.length === 0) return;
+
+        status.style.display = 'block';
+        status.textContent = '【開始批次處理】...\n';
+        downloadBtn.style.display = 'none';
+        
+        zip = new JSZip(); // 初始化 ZIP 對象
+        
+        // 【關鍵改動】喺 ZIP 壓縮檔內部建立一個叫 "fixed" 嘅資料夾
+        const fixedFolder = zip.folder("result");
+        
+        let processedCount = 0;
+
+        Array.from(files).forEach(file => {
+            if (!file.name.endsWith('.CDV')) {
+                status.textContent += `[跳過] ${file.name} (不是 .CDV 檔案)\n`;
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                
+                if (arrayBuffer.byteLength <= 2048) {
+                    status.textContent += `[跳過] ${file.name} (檔案太細粒)\n`;
+                    checkCompletion(files.length, ++processedCount);
+                    return;
+                }
+
+                // 1. 抽取前 512 Bytes Header
+                const header = arrayBuffer.slice(0, 512);
+
+                // 2. 抽取由 2048 Byte 開始的 Payload
+                const payload = arrayBuffer.slice(2048);
+
+                // 3. 拼接 CDVary
+                const fixedFile = new Uint8Array(header.byteLength + payload.byteLength);
+                fixedFile.set(new Uint8Array(header), 0);
+                fixedFile.set(new Uint8Array(payload), header.byteLength);
+
+                // 4. 去除副檔名
+                const fName = file.name.substring(0, file.name.lastIndexOf('.'));
+		const baseName = fName + ".gd3"
+
+                // 5. 【關鍵改動】改為放進 fixedFolder 內部，而不是直接放在 ZIP 根目錄
+                fixedFolder.file(baseName, fixedFile, {CDVary: true});
+
+                status.textContent += `[成功] ${file.name} -> 已順移並放入 result 資料夾\n`;
+                status.scrollTop = status.scrollHeight;
+
+                checkCompletion(files.length, ++processedCount);
+            };
+
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    // 檢查是否全部檔案處理完畢（完成後觸發背景大變身）
+    function checkCompletion(total, current) {
+        if (total === current) {
+            status.textContent += `\n【轉換完畢】所有成品已打包！`;
+            status.scrollTop = status.scrollHeight;
+
+            // 🌟 【核心花臣】一秒將網頁背景 (body) 轉做極搶眼螢光綠色！
+            document.body.style.background = "#00ff00";
+            
+            // 同時確保關閉原本嘅 CSS 動畫（如果有嘅話），強制鎖定喺螢光綠
+            document.body.style.animation = "none"; 
+
+            // 產生 ZIP 檔並綁定到下載按鈕
+            zip.generateAsync({type: "blob"}).then(function(content) {
+                downloadBtn.style.display = 'block';
+                downloadBtn.onclick = function() {
+                    const url = window.URL.createObjectURL(content);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = "fixed_files.zip";
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                };
+            });
+        }
+    }
+    // ==================================================
+    // DVD 反彈 + S型波浪扭曲（Sine Wave）物理引擎
+    // ==================================================
+    const dvdContainer = document.getElementById('dvdText');
+    const rawText = dvdContainer.textContent;
+    dvdContainer.textContent = ''; // 清空原本嘅純文字
+
+    // 🌟 核心花臣：將文字拆散做一粒粒 <span> 字母，方便等陣逐粒計算 Y 軸偏移
+    const charElements = [];
+    for (let i = 0; i < rawText.length; i++) {
+        const span = document.createElement('span');
+        // 如果係空格，要用 &nbsp; 確保佢佔空間
+        span.innerHTML = rawText[i] === ' ' ? '&nbsp;' : rawText[i];
+        span.className = 'dvd-char';
+        
+        // 🌟 讓每個字母嘅 RGB 變色時間稍微錯開（有種彩虹流動感）
+        span.style.animationDelay = `-${i * 0.1}s`;
+        
+        dvdContainer.appendChild(span);
+        charElements.push(span);
+    }
+
+    // 初始物理位置與速度
+    let posX = Math.random() * (window.innerWidth - 400);
+    let posY = Math.random() * (window.innerHeight - 100);
+    let speedX = 3; 
+    let speedY = 3;
+    
+    // 用作計算 Sine 波浪嘅時間計數器
+    let waveCount = 0; 
+
+    function updatePhysics() {
+        const winWidth = window.innerWidth;
+        const winHeight = window.innerHeight;
+        const boxWidth = dvdContainer.offsetWidth;
+        const boxHeight = dvdContainer.offsetHeight;
+
+        // 1. 基本 DVD 飛行坐標更新
+        posX += speedX;
+        posY += speedY;
+
+        // X 軸反彈
+        if (posX + boxWidth >= winWidth) { speedX = -Math.abs(speedX); posX = winWidth - boxWidth; }
+        else if (posX <= 0) { speedX = Math.abs(speedX); posX = 0; }
+
+        // Y 軸反彈
+        if (posY + boxHeight >= winHeight) { speedY = -Math.abs(speedY); posY = winHeight - boxHeight; }
+        else if (posY <= 0) { speedY = Math.abs(speedY); posY = 0; }
+
+        // 套用大框位置
+        dvdContainer.style.left = posX + 'px';
+        dvdContainer.style.top = posY + 'px';
+
+        // 2. 🌟 瘋狂花臣：計算每個字母嘅 Y 軸 S 型正弦波扭曲
+        waveCount += 0.08; // 數值越大，扭動速度越快
+        
+        charElements.forEach((charSpan, index) => {
+            // Math.sin 核心公式：
+            // waveCount 控制成條蛇嘅游動時間
+            // (index * 0.25) 控制波浪嘅波長（字母同字母之間嘅高低差）
+            // 最尾的 * 18 控制扭曲嘅幅度（18像素高低起伏）
+            const offsetY = Math.sin(waveCount + (index * 0.25)) * 18;
+            
+            // 同時加上少少左右扭曲，效果更動感
+            const offsetX = Math.cos(waveCount + (index * 0.25)) * 4;
+            
+            charSpan.style.transform = `translate(${offsetX}px, ${offsetY}px)`;
+        });
+
+        requestAnimationFrame(updatePhysics);
+    }
+
+    // 視窗大小防夾死
+    window.addEventListener('resize', () => {
+        if (posX + dvdContainer.offsetWidth > window.innerWidth) posX = window.innerWidth - dvdContainer.offsetWidth;
+        if (posY + dvdContainer.offsetHeight > window.innerHeight) posY = window.innerHeight - dvdContainer.offsetHeight;
+    });
+
+    // 啟動引擎
+    updatePhysics();
+
+
+
+</script>
+
+</body>
+</html>
