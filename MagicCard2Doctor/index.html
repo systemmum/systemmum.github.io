@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Card to GameDoctor Convertor (Hardware Calibrated V5)</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0c0c0c;
+            background-image: url(https://systemmum.github.io/FCtoGD/background.jpg);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #ffffff;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            position: relative;
+            transition: background-color 0.4s ease;
+        }
+        body.success-bg {
+            background-color: #00ff33 !important;
+            color: #000000 !important;
+        }
+        .build-badge {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #888888;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #333333;
+        }
+        body.success-bg .build-badge {
+            color: #000000;
+            background: rgba(255, 255, 255, 0.7);
+            border-color: #999999;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            transition: color 0.4s ease;
+        }
+        body.success-bg h1 {
+            color: #000000;
+        }
+        .container {
+            background: #1e1e1e;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+            border: 1px solid #333333;
+            transition: all 0.4s ease;
+        }
+        body.success-bg .container {
+            background: #ffffff;
+            color: #000000;
+            box-shadow: 0 4px 20px rgba(0,255,51,0.1);
+            border: 1px solid #ffffff;
+        }
+        .upload-box {
+            border: 3px dashed #555555;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #151515;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        body.success-bg .upload-box {
+            background: #f5f5f5;
+            border-color: #00aa22;
+        }
+        .upload-box:hover {
+            background: #222222;
+            border-color: #00ff33;
+        }
+        #fileInput {
+            display: none;
+        }
+        .file-info {
+            margin-top: 20px;
+            padding: 15px;
+            background: #252525;
+            border-left: 4px solid #00ff33;
+            border-radius: 4px;
+            display: none;
+        }
+        body.success-bg .file-info {
+            background: #e8fee8;
+            border-left-color: #00aa22;
+        }
+        
+        /* ⚙️ 修正選項控制區樣式 */
+        .patch-control-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: #1a1a1a;
+            border-radius: 6px;
+            border: 1px solid #333333;
+            display: flex;
+            align-items: center;
+            transition: all 0.4s ease;
+        }
+        body.success-bg .patch-control-panel {
+            background: #f9f9f9;
+            border-color: #dddddd;
+        }
+        .patch-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+            user-select: none;
+            width: 100%;
+        }
+        .patch-checkbox {
+            width: 18px;
+            height: 18px;
+            margin-right: 12px;
+            cursor: pointer;
+            accent-color: #00ff33;
+        }
+        body.success-bg .patch-checkbox {
+            accent-color: #00aa22;
+        }
+        .patch-desc {
+            font-size: 13px;
+            color: #aaa;
+            font-weight: normal;
+            margin-left: 5px;
+        }
+        body.success-bg .patch-desc {
+            color: #666666;
+        }
+
+        .info-panel {
+            margin-top: 15px;
+            padding: 15px;
+            background: #252525;
+            border-radius: 6px;
+            border: 1px solid #333333;
+            display: none;
+        }
+        body.success-bg .info-panel {
+            background: #f0f0f0;
+            border-color: #cccccc;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            font-size: 14px;
+            margin-top: 8px;
+        }
+        .info-item {
+            background: #1a1a1a;
+            padding: 8px 12px;
+            border-radius: 4px;
+            border: 1px solid #333333;
+        }
+        body.success-bg .info-item {
+            background: #ffffff;
+            border-color: #dddddd;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #888888;
+        }
+        body.success-bg .info-label {
+            color: #666666;
+        }
+        .info-value {
+            font-weight: bold;
+            color: #ffffff;
+        }
+        body.success-bg .info-value {
+            color: #000000;
+        }
+        .alert-badge {
+            margin-top: 12px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: bold;
+            display: none;
+        }
+        .badge-success {
+            background-color: #1b4322;
+            color: #7fdf8a;
+            border: 1px solid #23582d;
+        }
+        body.success-bg .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .badge-danger {
+            background-color: #4c1c1c;
+            color: #f37a7a;
+            border: 1px solid #632626;
+        }
+        .btn-container {
+            text-align: center;
+            margin-top: 25px;
+        }
+        button {
+            background-color: #333333;
+            color: #777777;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+        }
+        button:not(:disabled) {
+            background-color: #00ff33;
+            color: #000000;
+        }
+        button:hover:not(:disabled) {
+            background-color: #00cc22;
+            box-shadow: 0 4px 10px rgba(0,255,51,0.4);
+        }
+        button:disabled {
+            background-color: #333333;
+            color: #777777;
+            cursor: not-allowed;
+        }
+        .log-box {
+            margin-top: 25px;
+            background: #000000;
+            color: #00ff33;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #222222;
+            display: none;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        body.success-bg .log-box {
+            background: #222222;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="build-badge">Build: 20260702_0400_MC_V5_GREYPATCH</div>
+
+    <h1>Magic Card to GameDoctor Convertor</h1>
+
+    <div class="container">
+        <div class="upload-box" onclick="document.getElementById('fileInput').click()">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+            <p style="font-size: 16px; margin-top: 10px; font-weight: bold;">點擊此處或拖曳 .mc 檔案到這裡</p>
+            <span style="color: #888888; font-size: 13px;">(強制規格：4磁碟物理直映 + 可選灰畫面修正機制)</span>
+            <input type="file" id="fileInput" accept=".mc">
+        </div>
+
+        <div class="patch-control-panel">
+            <label class="patch-label">
+                <input type="checkbox" id="greyScreenPatchCheck" class="patch-checkbox">
+                <span>啟用灰色畫面相容性修正</span>
+                <span class="patch-desc">(將 Disk A 的位址 55h 強制修改為 40h，防止實機卡灰屏)</span>
+            </label>
+        </div>
+
+        <div id="fileInfo" class="file-info"></div>
+
+        <div id="infoPanel" class="info-panel">
+            <div style="font-weight: bold; color: #00ff33; border-bottom: 1px solid #333333; padding-bottom: 5px;" id="panelTitle">🔍 Magic Card 硬體指紋安全審查：</div>
+            <div class="info-grid">
+                <div class="info-item"><span class="info-label">檔案總容量: </span><span id="vFileSize" class="info-value">-</span></div>
+                <div class="info-item"><span class="info-label">容量合法性: </span><span id="vSizeStatus" class="info-value">-</span></div>
+                <div class="info-item"><span class="info-label">零區特徵區段: </span><span id="vPaddingLabel" class="info-value">0x10 - 0x1FF</span></div>
+                <div class="info-item"><span class="info-label">零區驗證結果: </span><span id="vZeroStatus" class="info-value">-</span></div>
+            </div>
+            <div id="alertBadge" class="alert-badge"></div>
+        </div>
+
+        <div class="btn-container">
+            <button id="convertBtn" disabled>等待讀取檔案...</button>
+        </div>
+
+        <div id="logBox" class="log-box"></div>
+    </div>
+
+    <script>
+        let mcBuffer = null;
+        let originalFileName = "game";
+        const EXPECTED_SIZE = 0x40200; // 262656 Bytes
+
+        // ==================== [ ⚙️ 獨立預留空間：精確儲存您的自訂 Hex 數據 ] ====================
+        const block_headers = [
+            [	0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42,
+				0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0x01, 0x27, 0x49, 0x61, 0x00, 
+				0x00, 0x02, 0x00, 0x45, 0x00, 0x43, 0x00, 0x77, 0x02, 0x05, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x03, 0x00, 
+				0x00, 0x02, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x08, 0x00, 
+				0x00, 0x00, 0x00, 0x04, 0x80, 0x20, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 
+				0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04], // Block 1 Header (113 位元組)
+            
+			[	0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04], // Block 2 Header (21 位元組)
+            
+			[	0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42, 0x45,
+				0x4E, 0x4E, 0x59, 0x01, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0x01, 0x27, 0x49, 0x61, 0x00, 0x00, 0x02,
+				0x00, 0x45, 0x00, 0x43, 0x00, 0x77, 0x02, 0x05, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x02,
+				0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04], // Block 3 Header (84 位元組)
+				
+            [	0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04], // Block 4 Header (21 位元組)
+
+            [	0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42, 0x45, 
+				0x4E, 0x4E, 0x59, 0x02, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0x01, 0x27, 0x49, 0x61, 0x00, 0x00, 0x02, 
+				0x00, 0x45, 0x00, 0x43, 0x00, 0x77, 0x02, 0x05, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x02, 
+				0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04], // Block 5 Header (84 位元組)
+
+            [	0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04], // Block 6 Header (21 位元組)
+
+            [	0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42, 0x45,
+				0x4E, 0x4E, 0x59, 0x03, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0x01, 0x27, 0x49, 0x61, 0x00, 0x00, 0x02,
+				0x00, 0x45, 0x00, 0x43, 0x00, 0x77, 0x02, 0x05, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x02, 0x02,
+				0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04], // Block 7 Header (84 位元組)
+
+            [	0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04]  // Block 8 Header (21 位元組)
+        ];
+
+        const disk_end_marker = [0x00, 0x00];
+
+        function log(message) {
+            const logBox = document.getElementById('logBox');
+            logBox.style.display = 'block';
+            logBox.innerHTML += message + '<br>';
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        // ==================== [ 🔍 核心合法性特徵審查系統 ] ====================
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.body.classList.remove('success-bg');
+            originalFileName = file.name.replace(/\.mc$/i, '');
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                mcBuffer = event.target.result;
+                const mcData = new Uint8Array(mcBuffer);
+                const actualSize = mcData.length;
+
+                const isSizeValid = (actualSize === EXPECTED_SIZE);
+                document.getElementById('vFileSize').innerText = `${actualSize} 位元組`;
+                document.getElementById('vSizeStatus').innerText = isSizeValid ? "OK (符合 0x40200)" : "❌ 錯誤 (非 0x40200)";
+
+                let isZeroZoneValid = true;
+                for (let i = 0; i < 512; i++) {
+                    if (i >= 0x10 && i <= 0x1FF) {
+                        if (mcData[i] !== 0x00) {
+                            isZeroZoneValid = false;
+                            break;
+                        }
+                    }
+                }
+                document.getElementById('vZeroStatus').innerText = isZeroZoneValid ? "OK (全為 0x00)" : "❌ 異常 (含有雜訊數據)";
+
+                document.getElementById('infoPanel').style.display = 'block';
+                document.getElementById('fileInfo').style.display = 'block';
+                document.getElementById('fileInfo').innerHTML = `<strong>已載入原始硬體備份：</strong> ${file.name}`;
+                document.getElementById('logBox').innerHTML = '';
+
+                const badge = document.getElementById('alertBadge');
+                badge.style.display = 'block';
+                const convertBtn = document.getElementById('convertBtn');
+
+                log("--- 啟動 Magic Card 4碟直映與動態相容性校準系統 (V5) ---");
+
+                if (isSizeValid && isZeroZoneValid) {
+                    badge.className = 'alert-badge badge-success';
+                    badge.innerHTML = `✅ 安全審查通過：符合 Magic Card 物理特徵。4片等位磁碟直映與動態修補管道已解鎖。`;
+                    convertBtn.innerText = "執行雙區塊分組硬體直映工程";
+                    convertBtn.disabled = false;
+                    log("🟢 安全機制：硬體指紋校準成功。");
+                } else {
+                    badge.className = 'alert-badge badge-danger';
+                    badge.innerHTML = `❌ 安全審查拒絕：檔案大小或特徵不符！`;
+                    convertBtn.innerText = "特徵未通過，拒絕轉換";
+                    convertBtn.disabled = true;
+                    log("❌ 拒絕：指紋不匹配，安全中斷。");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // ==================== [ 🛠️ 轉換核心與分碟包裝工程 ] ====================
+        document.getElementById('convertBtn').addEventListener('click', function() {
+            if (!mcBuffer) return;
+
+            const mcData = new Uint8Array(mcBuffer);
+            const zip = new JSZip();
+            const isPatchEnabled = document.getElementById('greyScreenPatchCheck').checked;
+
+            log("🚀 啟動清洗工藝：剝離前 512 位元組（0x000 - 0x1FF）...");
+            const romCore = mcData.subarray(0x200);
+            log(`➔ 清洗完成，核心純資料長度：${romCore.length} 位元組 (256KB)`);
+
+            // 1. 提取 8 個 32KB 區塊並注入獨立前綴
+            const blockSize = 0x8000; // 32KB
+            let compositeBlocks = [];
+
+            log("⚙️ 依序處理 8 個 32KiB 核心單元，精確注入對應的 Header...");
+            for (let i = 0; i < 8; i++) {
+                const startPos = i * blockSize;
+                const rawBlock = romCore.subarray(startPos, startPos + blockSize);
+                
+                // 深度拷貝前綴，避免汙染全域靜態陣列
+                let currentHeader = [...block_headers[i]];
+
+                // ⚡ 核心動態修補：如果勾選了灰畫面修正，且目前處理的是 Block 1 (index 0)
+                if (i === 0 && isPatchEnabled) {
+                    if (currentHeader.length > 0x55) {
+                        const originalValue = currentHeader[0x55].toString(16).toUpperCase().padStart(2, '0');
+                        currentHeader[0x55] = 0x40; // 將位址 55h 修改為 40h
+                        log(`   ⚠️ <span style='color:#ffcc00;'><b>[灰屏修補機制觸發]</b>：已將 Disk A 的 Address 55h 由 ${originalValue}h 強制覆寫為 40h！</span>`);
+                    } else {
+                        log(`   ❌ 警告：Block 1 Header 長度不足，無法執行 55h 修補。`);
+                    }
+                }
+                
+                const headerUint8 = new Uint8Array(currentHeader);
+                const compBlock = new Uint8Array(headerUint8.length + rawBlock.length);
+                compBlock.set(headerUint8, 0);
+                compBlock.set(rawBlock, headerUint8.length);
+
+                compositeBlocks.push(compBlock);
+                log(`   ➔ 區塊 ${i + 1}: 已注入 Header (${headerUint8.length}B) + 數據 (32KiB)，總長度: ${compBlock.length} 位元組`);
+            }
+
+            // 2. 核心重構：兩兩分組，直接進行 4 片磁碟物理軌道直映
+            const endMarker = new Uint8Array(disk_end_marker);
+            const diskLetters = ['A', 'B', 'C', 'D'];
+
+            log("⚙️ 啟動雙區塊物理直映封裝（強制輸出 4 片磁碟）...");
+
+            for (let d = 0; d < 4; d++) {
+                const blockIdx1 = d * 2;
+                const blockIdx2 = d * 2 + 1;
+
+                const b1 = compositeBlocks[blockIdx1];
+                const b2 = compositeBlocks[blockIdx2];
+
+                // 結合兩個複合區塊
+                const validDataLength = b1.length + b2.length;
+                const diskSliceRaw = new Uint8Array(validDataLength);
+                diskSliceRaw.set(b1, 0);
+                diskSliceRaw.set(b2, b1.length);
+
+                // 在末尾直接附加 [0x00, 0x00] 結束標記
+                const finalFileContent = new Uint8Array(diskSliceRaw.length + endMarker.length);
+                finalFileContent.set(diskSliceRaw, 0);
+                finalFileContent.set(endMarker, diskSliceRaw.length);
+
+                const outFileName = `${originalFileName}.${diskLetters[d]}`;
+                
+                // 打包進 ZIP
+                zip.file(outFileName, finalFileContent);
+                
+                const hexSize = finalFileContent.length.toString(16).toUpperCase() + 'h';
+                log(`   ➔ 封裝完畢: [ ${outFileName} ] 最終檔案大小: <b>${hexSize}</b> (${finalFileContent.length}B)`);
+            }
+
+            // 3. 下載 ZIP 壓縮檔
+            zip.generateAsync({ type: "blob" }).then(function(content) {
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(content);
+                link.download = `${originalFileName}_Doctor_V5_Patched.zip`;
+                link.click();
+                log(`<span style='color:#ffffff;'><b>🎉 實機特徵校準與動態修補竣工！已成功導出 4 片磁碟包！</b></span>`);
+                document.body.classList.add('success-bg');
+            });
+        });
+
+        // ==================== [ 拖曳優化配置區 ] ====================
+        const dropBox = document.querySelector('.upload-box');
+        ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#00ff33'; }));
+        ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#555555'; }));
+        dropBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if(files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                document.getElementById('fileInput').dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+</body>
+</html>
