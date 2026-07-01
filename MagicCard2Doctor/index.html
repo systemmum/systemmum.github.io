@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Magic Card to GameDoctor Convertor (Hardware Calibrated V5)</title>
+    <title>Magic Card to GameDoctor Convertor (Hardware Calibrated V6)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body {
@@ -18,12 +18,20 @@
             margin: 40px auto;
             padding: 20px;
             position: relative;
-            transition: background-color 0.4s ease;
+            overflow-x: hidden;
         }
-        body.success-bg {
-            background-color: #00ff33 !important;
-            color: #000000 !important;
+        
+        /* 🎨 Canvas 特效畫布層：置於背景圖之上，控制面板之下 */
+        #effectCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1;
+            pointer-events: none;
         }
+
         .build-badge {
             position: absolute;
             top: 10px;
@@ -36,80 +44,86 @@
             border-radius: 4px;
             border: 1px solid #333333;
         }
-        body.success-bg .build-badge {
-            color: #000000;
-            background: rgba(255, 255, 255, 0.7);
-            border-color: #999999;
-        }
+        
         h1 {
             text-align: center;
             margin-bottom: 30px;
-            transition: color 0.4s ease;
+            color: #ffffff; /* 鎖定文字顏色，永不變黑 */
+            text-shadow: 0 2px 10px rgba(0,0,0,0.8);
         }
-        body.success-bg h1 {
-            color: #000000;
-        }
+
+        /* 💎 頂級半透明磨砂玻璃質感主視窗 */
         .container {
-            background: #1e1e1e;
+            background: rgba(30, 30, 30, 0.65);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             padding: 30px;
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.8);
-            border: 1px solid #333333;
-            transition: all 0.4s ease;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
         }
-        body.success-bg .container {
-            background: #ffffff;
+        
+        /* 🎉 轉換成功：流暢轉換為高對比的「半透明白底黑字」玻璃窗 */
+        body.success-mode .container {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             color: #000000;
-            box-shadow: 0 4px 20px rgba(0,255,51,0.1);
-            border: 1px solid #ffffff;
+            box-shadow: 0 8px 32px 0 rgba(0, 255, 51, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.6);
         }
+
         .upload-box {
-            border: 3px dashed #555555;
+            border: 3px dashed rgba(255, 255, 255, 0.25);
             border-radius: 8px;
             padding: 40px 20px;
             text-align: center;
-            background: #151515;
+            background: rgba(0, 0, 0, 0.4);
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        body.success-bg .upload-box {
-            background: #f5f5f5;
+        body.success-mode .upload-box {
+            background: rgba(0, 0, 0, 0.03);
             border-color: #00aa22;
         }
         .upload-box:hover {
-            background: #222222;
+            background: rgba(255, 255, 255, 0.05);
             border-color: #00ff33;
+        }
+        body.success-mode .upload-box:hover {
+            background: rgba(0, 0, 0, 0.06);
         }
         #fileInput {
             display: none;
         }
+        
         .file-info {
             margin-top: 20px;
             padding: 15px;
-            background: #252525;
+            background: rgba(255, 255, 255, 0.05);
             border-left: 4px solid #00ff33;
             border-radius: 4px;
             display: none;
         }
-        body.success-bg .file-info {
-            background: #e8fee8;
+        body.success-mode .file-info {
+            background: rgba(0, 200, 0, 0.06);
             border-left-color: #00aa22;
         }
         
-        /* ⚙️ 修正選項控制區樣式 */
         .patch-control-panel {
             margin-top: 15px;
             padding: 15px;
-            background: #1a1a1a;
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 6px;
-            border: 1px solid #333333;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: center;
             transition: all 0.4s ease;
         }
-        body.success-bg .patch-control-panel {
-            background: #f9f9f9;
-            border-color: #dddddd;
+        body.success-mode .patch-control-panel {
+            background: rgba(0, 0, 0, 0.04);
+            border-color: rgba(0, 0, 0, 0.1);
         }
         .patch-label {
             display: flex;
@@ -127,30 +141,30 @@
             cursor: pointer;
             accent-color: #00ff33;
         }
-        body.success-bg .patch-checkbox {
+        body.success-mode .patch-checkbox {
             accent-color: #00aa22;
         }
         .patch-desc {
             font-size: 13px;
-            color: #aaa;
+            color: #aaaaaa;
             font-weight: normal;
             margin-left: 5px;
         }
-        body.success-bg .patch-desc {
-            color: #666666;
+        body.success-mode .patch-desc {
+            color: #555555;
         }
 
         .info-panel {
             margin-top: 15px;
             padding: 15px;
-            background: #252525;
+            background: rgba(0, 0, 0, 0.3);
             border-radius: 6px;
-            border: 1px solid #333333;
+            border: 1px solid rgba(255, 255, 255, 0.05);
             display: none;
         }
-        body.success-bg .info-panel {
-            background: #f0f0f0;
-            border-color: #cccccc;
+        body.success-mode .info-panel {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.1);
         }
         .info-grid {
             display: grid;
@@ -160,29 +174,30 @@
             margin-top: 8px;
         }
         .info-item {
-            background: #1a1a1a;
+            background: rgba(0, 0, 0, 0.4);
             padding: 8px 12px;
             border-radius: 4px;
-            border: 1px solid #333333;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
-        body.success-bg .info-item {
-            background: #ffffff;
-            border-color: #dddddd;
+        body.success-mode .info-item {
+            background: rgba(255, 255, 255, 0.6);
+            border-color: rgba(0, 0, 0, 0.08);
         }
         .info-label {
             font-weight: bold;
             color: #888888;
         }
-        body.success-bg .info-label {
+        body.success-mode .info-label {
             color: #666666;
         }
         .info-value {
             font-weight: bold;
             color: #ffffff;
         }
-        body.success-bg .info-value {
+        body.success-mode .info-value {
             color: #000000;
         }
+        
         .alert-badge {
             margin-top: 12px;
             padding: 10px;
@@ -192,26 +207,27 @@
             display: none;
         }
         .badge-success {
-            background-color: #1b4322;
+            background-color: rgba(27, 67, 34, 0.8);
             color: #7fdf8a;
             border: 1px solid #23582d;
         }
-        body.success-bg .badge-success {
+        body.success-mode .badge-success {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
         .badge-danger {
-            background-color: #4c1c1c;
+            background-color: rgba(76, 28, 28, 0.85);
             color: #f37a7a;
             border: 1px solid #632626;
         }
+        
         .btn-container {
             text-align: center;
             margin-top: 25px;
         }
         button {
-            background-color: #333333;
+            background-color: rgba(255, 255, 255, 0.1);
             color: #777777;
             border: none;
             padding: 12px 30px;
@@ -228,13 +244,15 @@
         }
         button:hover:not(:disabled) {
             background-color: #00cc22;
-            box-shadow: 0 4px 10px rgba(0,255,51,0.4);
+            box-shadow: 0 4px 15px rgba(0,255,51,0.4);
         }
         button:disabled {
-            background-color: #333333;
-            color: #777777;
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #666666;
             cursor: not-allowed;
+            box-shadow: none;
         }
+        
         .log-box {
             margin-top: 25px;
             background: #000000;
@@ -250,15 +268,18 @@
             white-space: pre-wrap;
             word-break: break-all;
         }
-        body.success-bg .log-box {
+        body.success-mode .log-box {
             background: #222222;
             color: #ffffff;
+            border-color: #444444;
         }
     </style>
 </head>
 <body>
 
-    <div class="build-badge">Build: 20260702_0400_MC_V5_GREYPATCH</div>
+    <canvas id="effectCanvas"></canvas>
+
+    <div class="build-badge">Build: 20260702_0410_MC_V6_CANVASEFFECTS</div>
 
     <h1>Magic Card to GameDoctor Convertor</h1>
 
@@ -266,7 +287,7 @@
         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <p style="font-size: 16px; margin-top: 10px; font-weight: bold;">點擊此處或拖曳 .mc 檔案到這裡</p>
-            <span style="color: #888888; font-size: 13px;">(強制規格：4磁碟物理直映 + 可選灰畫面修正機制)</span>
+            <span style="color: #aaaaaa; font-size: 13px;">(規格：4磁碟物理直映 + Canvas 雙模慶祝警示機制)</span>
             <input type="file" id="fileInput" accept=".mc">
         </div>
 
@@ -281,7 +302,7 @@
         <div id="fileInfo" class="file-info"></div>
 
         <div id="infoPanel" class="info-panel">
-            <div style="font-weight: bold; color: #00ff33; border-bottom: 1px solid #333333; padding-bottom: 5px;" id="panelTitle">🔍 Magic Card 硬體指紋安全審查：</div>
+            <div style="font-weight: bold; color: #00ff33; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 5px;" id="panelTitle">🔍 Magic Card 硬體指紋安全審查：</div>
             <div class="info-grid">
                 <div class="info-item"><span class="info-label">檔案總容量: </span><span id="vFileSize" class="info-value">-</span></div>
                 <div class="info-item"><span class="info-label">容量合法性: </span><span id="vSizeStatus" class="info-value">-</span></div>
@@ -299,11 +320,145 @@
     </div>
 
     <script>
+	
+		function log(message) {
+		const logBox = document.getElementById('logBox');
+		logBox.style.display = 'block';
+		logBox.innerHTML += message + '<br>';
+		logBox.scrollTop = logBox.scrollHeight;
+}
         let mcBuffer = null;
         let originalFileName = "game";
         const EXPECTED_SIZE = 0x40200; // 262656 Bytes
 
-        // ==================== [ ⚙️ 獨立預留空間：精確儲存您的自訂 Hex 數據 ] ====================
+        // ==================== [ ⚙️ 核心 Canvas 雙模動畫控制系統 ] ====================
+        const canvas = document.getElementById('effectCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationMode = 'none'; // 'none', 'fireworks', 'rain'
+        let particles = [];
+        let fireworks = [];
+        let rainDrops = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function startFireworks() {
+            animationMode = 'fireworks';
+            particles = [];
+            fireworks = [];
+            log("🎆 <span style='color:#00ff33;'><b>[視覺核心]</b>：啟動煙火慶祝動畫層！</span>");
+        }
+
+        function startRain() {
+            animationMode = 'rain';
+            rainDrops = [];
+            for (let i = 0; i < 150; i++) {
+                rainDrops.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    length: Math.random() * 20 + 10,
+                    speed: Math.random() * 12 + 6,
+                    opacity: Math.random() * 0.4 + 0.1
+                });
+            }
+            log("🌧️ <span style='color:#ff5555;'><b>[視覺核心]</b>：特徵異常，切換至下雨警示動畫層。</span>");
+        }
+
+        function loopEffects() {
+            requestAnimationFrame(loopEffects);
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (animationMode === 'fireworks') {
+                // 每隔一段隨機幀，主動誕生一個主煙火火箭
+                if (Math.random() < 0.05 && fireworks.length < 5) {
+                    fireworks.push({
+                        x: Math.random() * canvas.width,
+                        y: canvas.height,
+                        tx: Math.random() * canvas.width,
+                        ty: Math.random() * (canvas.height * 0.5),
+                        speed: Math.random() * 4 + 4,
+                        color: `hsl(${Math.random() * 360}, 100%, 60%)`
+                    });
+                }
+
+                // 渲染並推進主煙火火箭
+                for (let i = fireworks.length - 1; i >= 0; i--) {
+                    let f = fireworks[i];
+                    f.y -= f.speed;
+                    ctx.beginPath();
+                    ctx.arc(f.x, f.y, 3, 0, Math.PI * 2);
+                    ctx.fillStyle = f.color;
+                    ctx.fill();
+
+                    // 到達目標高度，產生爆炸粒子
+                    if (f.y <= f.ty) {
+                        for (let j = 0; j < 60; j++) {
+                            let angle = Math.random() * Math.PI * 2;
+                            let speed = Math.random() * 5 + 1;
+                            particles.push({
+                                x: f.x,
+                                y: f.y,
+                                vx: Math.cos(angle) * speed,
+                                vy: Math.sin(angle) * speed,
+                                alpha: 1,
+                                color: f.color
+                            });
+                        }
+                        fireworks.splice(i, 1);
+                    }
+                }
+
+                // 渲染爆炸擴散粒子
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.04; // 微量重力下墜
+                    p.alpha -= 0.015;
+
+                    if (p.alpha <= 0) {
+                        particles.splice(i, 1);
+                        continue;
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.fill();
+                    ctx.restore();
+                }
+            } 
+            else if (animationMode === 'rain') {
+                ctx.strokeStyle = 'rgba(174, 194, 224, 0.5)';
+                ctx.lineWidth = 1.5;
+                
+                for (let i = 0; i < rainDrops.length; i++) {
+                    let r = rainDrops[i];
+                    ctx.save();
+                    ctx.globalAlpha = r.opacity;
+                    ctx.beginPath();
+                    ctx.moveTo(r.x, r.y);
+                    ctx.lineTo(r.x + (r.speed * 0.1), r.y + r.length); // 斜細雨線
+                    ctx.stroke();
+                    ctx.restore();
+
+                    r.y += r.speed;
+                    if (r.y > canvas.height) {
+                        r.y = -r.length;
+                        r.x = Math.random() * canvas.width;
+                    }
+                }
+            }
+        }
+        loopEffects();
+
+        // ==================== [ ⚙️ 獨立預留空間：自訂 Hex 數據 ] ====================
         const block_headers = [
             [	0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42,
 				0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0x01, 0x27, 0x49, 0x61, 0x00, 
@@ -338,19 +493,15 @@
 
         const disk_end_marker = [0x00, 0x00];
 
-        function log(message) {
-            const logBox = document.getElementById('logBox');
-            logBox.style.display = 'block';
-            logBox.innerHTML += message + '<br>';
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
         // ==================== [ 🔍 核心合法性特徵審查系統 ] ====================
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            document.body.classList.remove('success-bg');
+            document.body.classList.remove('success-mode');
+            animationMode = 'none'; // 重置動畫狀態
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
             originalFileName = file.name.replace(/\.mc$/i, '');
 
             const reader = new FileReader();
@@ -383,11 +534,10 @@
                 badge.style.display = 'block';
                 const convertBtn = document.getElementById('convertBtn');
 
-                log("--- 啟動 Magic Card 4碟直映與動態相容性校準系統 (V5) ---");
 
                 if (isSizeValid && isZeroZoneValid) {
                     badge.className = 'alert-badge badge-success';
-                    badge.innerHTML = `✅ 安全審查通過：符合 Magic Card 物理特徵。4片等位磁碟直映與動態修補管道已解鎖。`;
+                    badge.innerHTML = `✅ 安全審查通過：4片等位磁碟物理映射管道已解鎖。可以開始轉換。`;
                     convertBtn.innerText = "執行雙區塊分組硬體直映工程";
                     convertBtn.disabled = false;
                     log("🟢 安全機制：硬體指紋校準成功。");
@@ -396,7 +546,8 @@
                     badge.innerHTML = `❌ 安全審查拒絕：檔案大小或特徵不符！`;
                     convertBtn.innerText = "特徵未通過，拒絕轉換";
                     convertBtn.disabled = true;
-                    log("❌ 拒絕：指紋不匹配，安全中斷。");
+                    // ⛈️ 特徵不符，直接解鎖下雨動畫
+                    startRain();
                 }
             };
             reader.readAsArrayBuffer(file);
@@ -414,7 +565,6 @@
             const romCore = mcData.subarray(0x200);
             log(`➔ 清洗完成，核心純資料長度：${romCore.length} 位元組 (256KB)`);
 
-            // 1. 提取 8 個 32KB 區塊並注入獨立前綴
             const blockSize = 0x8000; // 32KB
             let compositeBlocks = [];
 
@@ -423,17 +573,15 @@
                 const startPos = i * blockSize;
                 const rawBlock = romCore.subarray(startPos, startPos + blockSize);
                 
-                // 深度拷貝前綴，避免汙染全域靜態陣列
+                // 深度拷貝前綴
                 let currentHeader = [...block_headers[i]];
 
-                // ⚡ 核心動態修補：如果勾選了灰畫面修正，且目前處理的是 Block 1 (index 0)
+                // ⚡ 灰屏相容性修補機制
                 if (i === 0 && isPatchEnabled) {
                     if (currentHeader.length > 0x55) {
                         const originalValue = currentHeader[0x55].toString(16).toUpperCase().padStart(2, '0');
-                        currentHeader[0x55] = 0x40; // 將位址 55h 修改為 40h
+                        currentHeader[0x55] = 0x40; // 強制將 55h 覆寫為 40h
                         log(`   ⚠️ <span style='color:#ffcc00;'><b>[灰屏修補機制觸發]</b>：已將 Disk A 的 Address 55h 由 ${originalValue}h 強制覆寫為 40h！</span>`);
-                    } else {
-                        log(`   ❌ 警告：Block 1 Header 長度不足，無法執行 55h 修補。`);
                     }
                 }
                 
@@ -446,7 +594,6 @@
                 log(`   ➔ 區塊 ${i + 1}: 已注入 Header (${headerUint8.length}B) + 數據 (32KiB)，總長度: ${compBlock.length} 位元組`);
             }
 
-            // 2. 核心重構：兩兩分組，直接進行 4 片磁碟物理軌道直映
             const endMarker = new Uint8Array(disk_end_marker);
             const diskLetters = ['A', 'B', 'C', 'D'];
 
@@ -459,41 +606,43 @@
                 const b1 = compositeBlocks[blockIdx1];
                 const b2 = compositeBlocks[blockIdx2];
 
-                // 結合兩個複合區塊
                 const validDataLength = b1.length + b2.length;
                 const diskSliceRaw = new Uint8Array(validDataLength);
                 diskSliceRaw.set(b1, 0);
                 diskSliceRaw.set(b2, b1.length);
 
-                // 在末尾直接附加 [0x00, 0x00] 結束標記
                 const finalFileContent = new Uint8Array(diskSliceRaw.length + endMarker.length);
                 finalFileContent.set(diskSliceRaw, 0);
                 finalFileContent.set(endMarker, diskSliceRaw.length);
 
                 const outFileName = `${originalFileName}.${diskLetters[d]}`;
-                
-                // 打包進 ZIP
                 zip.file(outFileName, finalFileContent);
                 
                 const hexSize = finalFileContent.length.toString(16).toUpperCase() + 'h';
                 log(`   ➔ 封裝完畢: [ ${outFileName} ] 最終檔案大小: <b>${hexSize}</b> (${finalFileContent.length}B)`);
             }
 
-            // 3. 下載 ZIP 壓縮檔
+            // 下載 ZIP 壓縮檔並解鎖慶祝特效
             zip.generateAsync({ type: "blob" }).then(function(content) {
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(content);
-                link.download = `${originalFileName}_Doctor_V5_Patched.zip`;
+                link.download = `${originalFileName}_Doctor_V6_Effects.zip`;
                 link.click();
-                log(`<span style='color:#ffffff;'><b>🎉 實機特徵校準與動態修補竣工！已成功導出 4 片磁碟包！</b></span>`);
-                document.body.classList.add('success-bg');
+                
+                log(`<span style='color:#00aa22;'><b>🎉 實機特徵校準與組裝竣工！已成功導出 4 片精確大小的磁碟包！</b></span>`);
+                
+                // ⚡ 切換為轉換成功模式（磨砂窗體優雅變白，其餘不變）
+                document.body.classList.add('success-mode');
+                
+                // 🎆 點燃璀璨煙火動畫
+                startFireworks();
             });
         });
 
         // ==================== [ 拖曳優化配置區 ] ====================
         const dropBox = document.querySelector('.upload-box');
         ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#00ff33'; }));
-        ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#555555'; }));
+        ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = 'rgba(255,255,255,0.25)'; }));
         dropBox.addEventListener('drop', (e) => {
             e.preventDefault();
             const files = e.dataTransfer.files;
