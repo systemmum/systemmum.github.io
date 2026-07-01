@@ -213,7 +213,7 @@
 </head>
 <body>
 
-    <div class="build-badge">Build: 20260701_1800_V3</div>
+    <div class="build-badge">Build: 20260701_1845_V4</div>
 
     <h1>Famicom to GameDoctor Convertor</h1>
 
@@ -221,7 +221,7 @@
         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <p style="font-size: 16px; margin-top: 10px; font-weight: bold;">點擊此處或拖曳 .nes 檔案到這裡</p>
-            <span style="color: #888888; font-size: 13px;">(自動識別匹配：Mapper 0, 2, 3, 66)</span>
+            <span style="color: #888888; font-size: 13px;">(自動識別匹配：Mapper 0, 2, 3, 66, 87)</span>
             <input type="file" id="fileInput" accept=".nes">
         </div>
 
@@ -295,7 +295,7 @@
             0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00
         ]);
 
-        // 【數據庫 D】CNROM 大容量版 (Mapper 3 + 32K PRG + 32K CHR) 垂直鏡像專屬模板 (2026.07 更新版)
+        // 【數據庫 D】CNROM 大容量版 (Mapper 3 + 32K PRG + 32K CHR) 垂直鏡像專屬模板
         const cnrom_32k_v_prg_head = [
             0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43,
             0x2A, 0x04, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -308,11 +308,9 @@
         const cnrom_32k_chr_head = new Uint8Array([
             0x00, 0x00, 0x03, 0x00, 0x00, 0x31, 0x39, 0x39, 0x30, 0x20, 0x48, 0x4B, 0x47, 0xFF, 0x4F, 0x00, 0x80, 0x01, 0x00, 0x00, 0x04
         ]);
-        const cnrom_32k_chr_foot = new Uint8Array([0x00, 0x00]);
+        const cnrom_32k_foot = new Uint8Array([0x00, 0x00]);
 
-        // ==================== [ ⚙️ 數據庫 E：Mapper 66 三碟版專屬模板預留區 ] ====================
-
-        // 1. 【Disk 1 主引導頭】
+        // 【數據庫 E】Mapper 66 三碟版專屬模板
         const m66_disk1_main_head = [
 			0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42, 0x45,
 			0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -321,35 +319,45 @@
 			0x80, 0x80, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45,
 			0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
         ];
-
-        // 2. 【Disk 1 中期引導頭】 
         const m66_disk1_mid_head = [
             0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
         ];
-
-        // 3. 【Disk 2 引導頭】
         const m66_disk2_main_head = [
             0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42, 0x45,
 			0x4E, 0x4E, 0x59, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02,
 			0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
         ];
-
-        // 4. 【Disk 2 中期引導頭】
         const m66_disk2_mid_head = [
             0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
         ];
-
-        // 5. 【Disk 3 引導頭】
         const m66_disk3_main_head = [
             0x00, 0x00, 0x81, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42, 0x45,
 			0x4E, 0x4E, 0x59, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x01,
 			0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x01, 0x00, 0x00, 0x04
         ];
-
-        // 6. 【統一尾部結束碼】 固定為 0x00, 0x00
         const m66_common_foot = new Uint8Array([0x00, 0x00]);
+
+        // ==================== [ ⚙️ 數據庫 F：Mapper 87 單碟版專屬模板預留區 ] ====================
+        
+        // 請在此處的方括號內貼上您的主引導頭 Hex
+        const m87_main_head = [
+        0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x30, 0x30, 0x31,
+		0x33, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00, 0x03,
+		0x00, 0x00, 0x47, 0x41, 0x4D, 0x45, 0x43, 0x41, 0x52, 0x44, 0xFF, 0x4F, 0x08, 0x00, 0x00, 0x00, 0x00, 0x04, 0x80, 0xC0, 0x30, 0x30,
+		0x31, 0x33, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x47, 0x41, 0x4D, 0x45, 0x43, 0x41, 0x52, 0x44, 0xFF, 0x4F, 0x00, 0x80, 0x00,
+		0x00, 0x00, 0x04    
+        ];
+
+        // 請在此處的方括號內貼上您的中期引導頭 Hex
+        const m87_mid_head = [
+        0x00, 0x00, 0x03, 0x00, 0x00, 0x47, 0x41, 0x4D, 0x45, 0x43, 0x41, 0x52, 0x44, 0xFF, 0x4F, 0x00, 0x40, 0x01, 0x00, 0x00, 0x04    
+        ];
+
+        // 請在此處的方括號內貼上您的尾部結束碼 Hex
+        const m87_foot = [0x00, 0x00];
 
 
         function log(message) {
@@ -439,9 +447,17 @@
                     convertBtn.disabled = false;
                     log("🟢 精准分配：進入 [管道 5] Mapper 66 雙層夾心對稱分片管道。");
                 }
+                else if (detectedMapper === 87 && prgSize === 16 && chrSize === 16) {
+                    document.getElementById('vMapper').innerText += " (Mapper 87 16K/16K 垂直版)";
+                    badge.className = 'alert-badge badge-success';
+                    badge.innerHTML = `✅ 匹配成功：符合 <b>Mapper 87 + PRG 16K + CHR 16K 垂直鏡像</b> 自訂流水線。將採用 4000H 雙倍鏡像與單碟打包！`;
+                    convertBtn.innerText = "執行 Mapper 87 單碟鏡像加法封裝";
+                    convertBtn.disabled = false;
+                    log("🟢 精准分配：進入 [管道 6] Mapper 87 16K 鏡像倍增單碟打包管道。");
+                }
                 else {
                     badge.className = 'alert-badge badge-warning';
-                    badge.innerHTML = `⚠️ 無法識別此規格組合：目前支援已定義的 Mapper 0, 2, 3, 66 的特定容量組合。`;
+                    badge.innerHTML = `⚠️ 無法識別此規格組合：目前支援已定義的 Mapper 0, 2, 3, 66, 87 的特定容量組合。`;
                     convertBtn.innerText = "規格未匹配，拒絕打包";
                     convertBtn.disabled = true;
                     log("❌ 錯誤：找不到匹配該 Mapper 編號和大小鏡像組合的專屬打包規則。");
@@ -561,7 +577,7 @@
                 let prgHeader = new Uint8Array(cnrom_32k_v_prg_head);
                 log("➔ 鏡像特徵鎖定：垂直鏡像 (標頭 Index 2 已設定為 0x83，特徵為 1990 HKG)");
 
-                const totalSize = prgHeader.length + part_32k_prg.length + cnrom_32k_chr_head.length + part_32k_chr.length + cnrom_32k_chr_foot.length;
+                const totalSize = prgHeader.length + part_32k_prg.length + cnrom_32k_chr_head.length + part_32k_chr.length + cnrom_32k_foot.length;
                 const finalData = new Uint8Array(totalSize);
                 
                 let offset = 0;
@@ -569,7 +585,7 @@
                 finalData.set(part_32k_prg, offset);         offset += part_32k_prg.length;
                 finalData.set(cnrom_32k_chr_head, offset);    offset += cnrom_32k_chr_head.length;
                 finalData.set(part_32k_chr, offset);         offset += part_32k_chr.length;
-                finalData.set(cnrom_32k_chr_foot, offset);
+                finalData.set(cnrom_32k_foot, offset);
                 
                 log(`➔ 管道 4 機械加法完美合體，總大小: ${finalData.byteLength} Bytes`);
                 zip.file(`${originalFileName}.A`, finalData);
@@ -580,16 +596,14 @@
             else if (detectedMapper === 66 && prgSize === 128 && chrSize === 32) {
                 log("🚀 [管道 5] 啟動 Mapper 66 128K/32K 三磁碟精準切割打包程序...");
 
-                // 轉為 Uint8Array 以備加載
                 const d1_main = new Uint8Array(m66_disk1_main_head);
                 const d1_mid  = new Uint8Array(m66_disk1_mid_head);
                 const d2_main = new Uint8Array(m66_disk2_main_head);
                 const d2_mid  = new Uint8Array(m66_disk2_mid_head);
                 const d3_main = new Uint8Array(m66_disk3_main_head);
 
-                // --- 🧱 [Disk 1 構造] ---
-                const p1_data = rawData.subarray(0, 0x8000);       // PRG 0K ~ 32K
-                const p2_data = rawData.subarray(0x8000, 0x10000); // PRG 32K ~ 64K
+                const p1_data = rawData.subarray(0, 0x8000);       
+                const p2_data = rawData.subarray(0x8000, 0x10000); 
                 log(`➔ Disk 1：成功截取前半部雙 8000H PRG 區段`);
 
                 const d1_total_size = d1_main.length + p1_data.length + d1_mid.length + p2_data.length + m66_common_foot.length;
@@ -601,9 +615,8 @@
                 disk1_Data.set(p2_data, off1);        off1 += p2_data.length;
                 disk1_Data.set(m66_common_foot, off1);
 
-                // --- 🧱 [Disk 2 構造] ---
-                const p3_data = rawData.subarray(0x10000, 0x18000); // PRG 64K ~ 96K
-                const p4_data = rawData.subarray(0x18000, 0x20000); // PRG 96K ~ 128K
+                const p3_data = rawData.subarray(0x10000, 0x18000); 
+                const p4_data = rawData.subarray(0x18000, 0x20000); 
                 log(`➔ Disk 2：成功截取後半部雙 8000H PRG 區段 (PRG 數據完結)`);
 
                 const d2_total_size = d2_main.length + p3_data.length + d2_mid.length + p4_data.length + m66_common_foot.length;
@@ -615,8 +628,7 @@
                 disk2_Data.set(p4_data, off2);        off2 += p4_data.length;
                 disk2_Data.set(m66_common_foot, off2);
 
-                // --- 🧱 [Disk 3 構造] ---
-                const chr_all_data = rawData.subarray(0x20000, 0x28000); // CHR 0K ~ 32K 全段 (32KB)
+                const chr_all_data = rawData.subarray(0x20000, 0x28000); 
                 log(`➔ Disk 3：成功截取完整 32KB CHR 獨立區段`);
 
                 const d3_total_size = d3_main.length + chr_all_data.length + m66_common_foot.length;
@@ -626,12 +638,57 @@
                 disk3_Data.set(chr_all_data, off3);   off3 += chr_all_data.length;
                 disk3_Data.set(m66_common_foot, off3);
 
-                // 打包匯出
                 zip.file(`${originalFileName}.A`, disk1_Data);
                 zip.file(`${originalFileName}.B`, disk2_Data);
                 zip.file(`${originalFileName}.C`, disk3_Data);
                 log(`➔ 管道 5 三片分離黏合機械工程全數竣工！`);
                 exportZip(zip, "Mapper66_3Disks");
+            }
+
+            // 🌟 【管道 6】: Mapper 87 (16K PRG + 16K CHR 垂直鏡像) 單碟倍增流水線
+            else if (detectedMapper === 87 && prgSize === 16 && chrSize === 16) {
+                log("🚀 [管道 6] 啟動 Mapper 87 16K/16K 單磁碟自動拼接流水線...");
+
+                const head_main = new Uint8Array(m87_main_head);
+                const head_mid  = new Uint8Array(m87_mid_head);
+                const foot_end  = new Uint8Array(m87_foot);
+
+                // 1. 提取原始 16KB PRG (0x4000 Bytes)
+                const prgSourceSize = 0x4000;
+                let srcPrg = new Uint8Array(prgSourceSize);
+                if (rawData.length >= 0) { 
+                    srcPrg.set(rawData.subarray(0, Math.min(prgSourceSize, rawData.length))); 
+                }
+                log(`➔ 提取原始 PRG 成功: ${srcPrg.length} Bytes`);
+
+                // 2. 方案 A：雙倍鏡像黏合（複製兩次成 32KB / 0x8000 Bytes）
+                let prgCopied32k = new Uint8Array(0x8000);
+                prgCopied32k.set(srcPrg, 0);
+                prgCopied32k.set(srcPrg, 0x4000);
+                log(`➔ 方案 A：PRG 16K 雙倍複製黏合 32KB (0x8000) 完工`);
+
+                // 3. 提取 16KB CHR (自 0x4000 偏移量處截取 0x4000 區段)
+                const chrSourceSize = 0x4000;
+                let chrData = new Uint8Array(chrSourceSize);
+                if (rawData.length >= prgSourceSize) {
+                    chrData.set(rawData.subarray(prgSourceSize, Math.min(prgSourceSize + chrSourceSize, rawData.length)));
+                }
+                log(`➔ 提取 CHR 區段成功: ${chrData.length} Bytes`);
+
+                // 4. 機械拼接程序
+                const totalSize = head_main.length + prgCopied32k.length + head_mid.length + chrData.length + foot_end.length;
+                const finalData = new Uint8Array(totalSize);
+
+                let offset = 0;
+                finalData.set(head_main, offset);   offset += head_main.length;
+                finalData.set(prgCopied32k, offset); offset += prgCopied32k.length;
+                finalData.set(head_mid, offset);    offset += head_mid.length;
+                finalData.set(chrData, offset);     offset += chrData.length;
+                finalData.set(foot_end, offset);
+
+                log(`➔ 管道 6 單片機械工程全數竣工，總大小: ${finalData.byteLength} Bytes`);
+                zip.file(`${originalFileName}.A`, finalData);
+                exportZip(zip, "Mapper87");
             }
         });
 
