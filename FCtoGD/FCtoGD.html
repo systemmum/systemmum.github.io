@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NES 轉 GameDoctor (全自動規格鏡像對齊版)</title>
+    <title>NES 轉 GameDoctor (自動化鏡像多管線對齊版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
 body {
@@ -196,13 +196,13 @@ body {
 </head>
 <body>
 
-    <h1>NES 轉 GameDoctor (智能規格鏡像自動對齊版)</h1>
+    <h1>NES 轉 GameDoctor (自動化鏡像多管線對齊版)</h1>
 
     <div class="container">
         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
             <svg width="50" height="50" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
             <p style="font-size: 16px; margin-top: 10px; font-weight: bold;">點擊此處或拖曳 .nes 檔案到這裡</p>
-            <span style="color: #888888; font-size: 13px;">(依據 Mapper 編號 + PRG 大小 + CHR 大小 + 鏡像配置進行精準匹配)</span>
+            <span style="color: #888888; font-size: 13px;">(自動識別匹配：Mapper 0, Mapper 2, Mapper 3)</span>
             <input type="file" id="fileInput" accept=".nes">
         </div>
 
@@ -236,7 +236,7 @@ body {
 
         // ==================== [ ⚙️ 標頭數據模板庫 ] ====================
         
-        // 【數據庫 A】原版 UNROM (Mapper 2) 封裝模版
+        // 【數據庫 A】UNROM (Mapper 2) 封裝模版
         const unrom_header1_template = [
             0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
             0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -246,33 +246,34 @@ body {
         const unrom_header3 = new Uint8Array([0x00,0x00,0x82,0x01,0x2A,0x4E,0x49,0x4E,0x54,0x45,0x4E,0x44,0x4F,0x2D,0x48,0x56,0x43,0x2A,0xFF,0x42,0x45,0x4E,0x4E,0x59,0x01,0x01,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x02,0x02,0x00,0x00,0x03,0x00,0x00,0x43,0x41,0x52,0x44,0x47,0x41,0x4D,0x45,0xFF,0x4F,0x00,0x80,0x00,0x00,0x00,0x04]);
         const unrom_footer2_4 = new Uint8Array([0x00, 0x00]);
 
-        // 【數據庫 B】原版 NROM (Mapper 0 + 16K PRG + 8K CHR) 專用複製流標頭模版
-        const nrom_16k_prg_head_template = [
+        // 【數據庫 B】NROM (Mapper 0 + 16K PRG + 8K CHR) 標頭模版
+        const nrom_prg_head_template = [
             0x00, 0x00, 0x84, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
             0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x08, 0x00, 0x00, 0x00, 0x00, 0x04, 0x80, 0xE0, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
         ];
-        const nrom_16k_chr_head = new Uint8Array([
+        const nrom_chr_head = new Uint8Array([
             0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x20, 0x01, 0x00, 0x00, 0x04
         ]);
-        const nrom_16k_chr_foot = new Uint8Array([
+        const nrom_chr_foot = new Uint8Array([
             0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00
         ]);
 
-        // 【數據庫 C】特規 NROM (Mapper 0 + 32K PRG + 8K CHR) 專用加法標頭模板
-        const nrom_32k_prg_head_template = [
+        // 【數據庫 C】CNROM (Mapper 3 + 32K PRG + 16K CHR) 標頭模版
+        // 🛠️ 55h 位元（索引 85）已依指示指定並固定為 0xC0
+        const cnrom_32k_prg_head_template = [
             0x00, 0x00, 0x84, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
             0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x03, 0x00, 
             0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x08, 0x00, 
-            0x00, 0x00, 0x00, 0x04, 0x80, 0xE0, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
+            0x00, 0x00, 0x00, 0x04, 0x80, 0xC0, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x80, 0x00, 0x00, 0x00, 0x04
         ];
-        const nrom_32k_chr_head = new Uint8Array([
-            0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x20, 0x01, 0x00, 0x00, 0x04
+        const cnrom_16k_chr_head = new Uint8Array([
+            0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x00, 0x40, 0x01, 0x00, 0x00, 0x04
         ]);
-        const nrom_32k_chr_foot = new Uint8Array([
+        const cnrom_16k_chr_foot = new Uint8Array([
             0x00, 0x00, 0x03, 0x00, 0x00, 0x43, 0x41, 0x52, 0x44, 0x47, 0x41, 0x4D, 0x45, 0xFF, 0x4F, 0x01, 0x00, 0x00, 0x00, 0x00, 0x04, 0x00, 0x00, 0x00
         ]);
 
@@ -322,9 +323,8 @@ body {
                 document.getElementById('logBox').innerHTML = '';
                 log("--- 啟動精準組合規格匹配分析 ---");
 
-                // ✨ 嚴格交叉核對分流
+                // ✨ 三向智能交叉核對分流
                 if (detectedMapper === 0 && prgSize === 16 && chrSize === 8) {
-                    // 管道 1
                     document.getElementById('vMapper').innerText += " (NROM 16K)";
                     badge.className = 'alert-badge badge-success';
                     badge.innerHTML = `✅ 匹配成功：符合 <b>Mapper 0 + PRG 16K + CHR 8K</b> 流水線。將採用 4000H 雙倍鏡像粘合處理！`;
@@ -332,27 +332,25 @@ body {
                     convertBtn.disabled = false;
                     log("🟢 精准分配：進入 [管道 1] NROM 16K 鏡像倍增封裝管道。");
                 } 
-                else if (detectedMapper === 0 && prgSize === 32 && chrSize === 8) {
-                    // 管道 2
-                    document.getElementById('vMapper').innerText += " (NROM 32K)";
-                    badge.className = 'alert-badge badge-success';
-                    badge.innerHTML = `✅ 匹配成功：符合 <b>Mapper 0 + PRG 32K + CHR 8K</b> 流水線。將採用實機動態鏡像加法封裝！`;
-                    convertBtn.innerText = "執行 NROM 32K 純加法打包";
-                    convertBtn.disabled = false;
-                    log("🟢 精准分配：進入 [管道 2] NROM 32K 固態純加法管道。");
-                } 
                 else if (detectedMapper === 2 && prgSize === 128) {
-                    // 管道 3
                     document.getElementById('vMapper').innerText += " (UNROM 128K)";
                     badge.className = 'alert-badge badge-success';
                     badge.innerHTML = `✅ 匹配成功：符合 <b>Mapper 2 + PRG 128K</b> 標準雙片規格。系統將輸出 .A / .B 雙檔壓縮包！`;
                     convertBtn.innerText = "執行 UNROM 雙片封裝打包";
                     convertBtn.disabled = false;
-                    log("🟢 精准分配：進入 [管道 3] UNROM 128K 雙片分片封裝管道。");
+                    log("🟢 精准分配：進入 [管道 2] UNROM 128K 雙片分片封裝管道。");
                 } 
+                else if (detectedMapper === 3 && prgSize === 32 && chrSize === 16) {
+                    document.getElementById('vMapper').innerText += " (CNROM 32K/16K)";
+                    badge.className = 'alert-badge badge-success';
+                    badge.innerHTML = `✅ 匹配成功：符合 <b>Mapper 3 + PRG 32K + CHR 16K</b> 流水線。將採用 0xC0 固定標頭拼接封裝！`;
+                    convertBtn.innerText = "執行 CNROM 32K 完美加法封裝";
+                    convertBtn.disabled = false;
+                    log("🟢 精准分配：進入 [管道 3] CNROM 32K 固態加法封裝管道。");
+                }
                 else {
                     badge.className = 'alert-badge badge-warning';
-                    badge.innerHTML = `⚠️ 無法識別此規格組合：目前僅支援支援已定義的特定 Mapper、PRG 與 CHR 大小組合。`;
+                    badge.innerHTML = `⚠️ 無法識別此規格組合：目前支援已定義的 Mapper 0, 2, 3 特性。`;
                     convertBtn.innerText = "規格未匹配，拒絕打包";
                     convertBtn.disabled = true;
                     log("❌ 錯誤：找不到匹配該 Mapper 編號和大小組合的專屬打包規則。");
@@ -369,7 +367,7 @@ body {
             const zip = new JSZip();
             const rawData = nesData.subarray(16); // 剝除外層 16B iNES Header
 
-            // 🌟 【管道 1 執行區】: Mapper 0 + 16K PRG + 8K CHR (雙倍粘合邏輯)
+            // 🌟 【管道 1】: Mapper 0 + 16K PRG + 8K CHR (雙倍粘合邏輯)
             if (detectedMapper === 0 && prgSize === 16 && chrSize === 8) {
                 log("🚀 [管道 1] 啟動 NROM 16K 鏡像粘合流水線...");
 
@@ -379,7 +377,6 @@ body {
                     srcPrg.set(rawData.subarray(0, Math.min(prgSourceSize, rawData.length)));
                 }
                 
-                // 4000H 複製為 8000H
                 let prgHeaderlessCopied = new Uint8Array(0x8000);
                 prgHeaderlessCopied.set(srcPrg, 0);
                 prgHeaderlessCopied.set(srcPrg, 0x4000);
@@ -392,8 +389,7 @@ body {
                 }
                 log("➔ 8K CHR 數據分離完成。");
 
-                // 動態修正 55h 位置鏡像
-                let prgHeader = new Uint8Array(nrom_16k_prg_head_template);
+                let prgHeader = new Uint8Array(nrom_prg_head_template);
                 if (isHorizontalMirror) {
                     prgHeader[0x55] = 0xF0;
                     log("➔ 水平鏡像：0x55 處動態修正為 F0");
@@ -402,60 +398,24 @@ body {
                     log("➔ 垂直鏡像：0x55 處保持預設 E0");
                 }
 
-                // 拼接
-                const totalSize = prgHeader.length + prgHeaderlessCopied.length + nrom_16k_head_adapter().length + chrHeaderless.length + nrom_16k_foot_adapter().length;
+                const totalSize = prgHeader.length + prgHeaderlessCopied.length + nrom_chr_head.length + chrHeaderless.length + nrom_chr_foot.length;
                 const finalA_Data = new Uint8Array(totalSize);
                 
                 let offset = 0;
                 finalA_Data.set(prgHeader, offset); offset += prgHeader.length;
                 finalA_Data.set(prgHeaderlessCopied, offset); offset += prgHeaderlessCopied.length;
-                finalA_Data.set(nrom_16k_head_adapter(), offset); offset += nrom_16k_head_adapter().length;
+                finalA_Data.set(nrom_chr_head, offset); offset += nrom_chr_head.length;
                 finalA_Data.set(chrHeaderless, offset); offset += chrHeaderless.length;
-                finalA_Data.set(nrom_16k_foot_adapter(), offset);
+                finalA_Data.set(nrom_chr_foot, offset);
                 
                 log(`➔ 管道 1 結構加法合體完畢，總大小: ${finalA_Data.byteLength} Bytes`);
                 zip.file(`${originalFileName}.A`, finalA_Data);
                 exportZip(zip, "NROM_16K");
             }
             
-            // 🌟 【管道 2 執行區】: Mapper 0 + 32K PRG + 8K CHR (實機動態加法管道)
-            else if (detectedMapper === 0 && prgSize === 32 && chrSize === 8) {
-                log("🚀 [管道 2] 啟動 NROM 32K 固態動態鏡像流水線...");
-                
-                const part_8000h = rawData.subarray(0, 0x8000);
-                const part_2000h = rawData.subarray(0x8000, 0x8000 + 0x2000);
-                
-                log(`➔ 提取 8000H 區段：${part_8000h.length} Bytes`);
-                log(`➔ 提取 2000H 區段：${part_2000h.length} Bytes`);
-
-                // 🛠️ ✨ 修正：引入動態鏡像修正邏輯
-                let prgHeader = new Uint8Array(nrom_32k_prg_head_template);
-                if (isHorizontalMirror) {
-                    prgHeader[0x55] = 0xF0;
-                    log("➔ 水平鏡像：0x55 處動態修正為 F0");
-                } else {
-                    prgHeader[0x55] = 0xE0;
-                    log("➔ 垂直鏡像：0x55 處動態修正為 E0");
-                }
-
-                const totalSize = prgHeader.length + part_8000h.length + nrom_32k_chr_head.length + part_2000h.length + nrom_32k_chr_foot.length;
-                const finalData = new Uint8Array(totalSize);
-                
-                let offset = 0;
-                finalData.set(prgHeader, offset);          offset += prgHeader.length;
-                finalData.set(part_8000h, offset);         offset += part_8000h.length;
-                finalData.set(nrom_32k_chr_head, offset);  offset += nrom_32k_chr_head.length;
-                finalData.set(part_2000h, offset);         offset += part_2000h.length;
-                finalData.set(nrom_32k_chr_foot, offset);
-                
-                log(`➔ 管道 2 固態結構拼接完畢，總大小: ${finalData.byteLength} Bytes`);
-                zip.file(`${originalFileName}.A`, finalData);
-                exportZip(zip, "NROM_32K");
-            }
-            
-            // 🌟 【管道 3 執行區】: Mapper 2 + 128K PRG (雙生封裝流)
+            // 🌟 【管道 2】: Mapper 2 + 128K PRG (雙生封裝流)
             else if (detectedMapper === 2 && prgSize === 128) {
-                log("🚀 [管道 3] 啟動 UNROM 128K 四分片切割封裝程序...");
+                log("🚀 [管道 2] 啟動 UNROM 128K 四分片切割封裝程序...");
                 
                 const chunkSize = 0x8000;
                 let rawChunks = [];
@@ -495,13 +455,38 @@ body {
                 log("➔ 管道 2 雙生數據分片封裝完成。");
                 exportZip(zip, "UNROM_128K");
             }
+
+            // 🌟 【管道 3】: Mapper 3 + 32K PRG + 16K CHR (固定 0xC0 加法管線)
+            else if (detectedMapper === 3 && prgSize === 32 && chrSize === 16) {
+                log("🚀 [管道 3] 啟動 CNROM 32K 固態加法流水線...");
+                
+                const part_8000h_prg = rawData.subarray(0, 0x8000);       // 32KB PRG
+                const part_4000h_chr = rawData.subarray(0x8000, 0x8000 + 0x4000); // 16KB CHR
+                
+                log(`➔ 提取 PRG 32KB 區段：${part_8000h_prg.length} Bytes`);
+                log(`➔ 提取 CHR 16KB 區段：${part_4000h_chr.length} Bytes`);
+
+                // 載入預載模板，其 55h 已固定為結構配置 0xC0 
+                let prgHeader = new Uint8Array(cnrom_32k_prg_head_template);
+                log("➔ 狀態確任：標頭 0x55 處已套用固定數值 0xC0");
+
+                // 純加法組合拼接
+                const totalSize = prgHeader.length + part_8000h_prg.length + cnrom_16k_chr_head.length + part_4000h_chr.length + cnrom_16k_chr_foot.length;
+                const finalData = new Uint8Array(totalSize);
+                
+                let offset = 0;
+                finalData.set(prgHeader, offset);            offset += prgHeader.length;
+                finalData.set(part_8000h_prg, offset);       offset += part_8000h_prg.length;
+                finalData.set(cnrom_16k_chr_head, offset);    offset += cnrom_16k_chr_head.length;
+                finalData.set(part_4000h_chr, offset);       offset += part_4000h_chr.length;
+                finalData.set(cnrom_16k_chr_foot, offset);
+                
+                log(`➔ 管道 3 固態結構純加法合體完畢，總大小: ${finalData.byteLength} Bytes`);
+                zip.file(`${originalFileName}.A`, finalData);
+                exportZip(zip, "CNROM_32K");
+            }
         });
 
-        // 管道 1 的適配函數
-        function nrom_16k_head_adapter() { return nrom_16k_chr_head; }
-        function nrom_16k_foot_adapter() { return nrom_16k_chr_foot; }
-
-        // 壓縮匯出與更換底色功能
         function exportZip(zipInstance, typeStr) {
             zipInstance.generateAsync({ type: "blob" }).then(function(content) {
                 const link = document.createElement('a');
@@ -514,7 +499,6 @@ body {
             });
         }
 
-        // 拖曳控制
         const dropBox = document.querySelector('.upload-box');
         ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#00ff33'; }));
         ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#555555'; }));
