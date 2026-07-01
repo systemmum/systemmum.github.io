@@ -3,26 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NES 轉 GameDoctor (自動化鏡像多管線對齊版)</title>
+    <title>Famicom to GameDoctor Convertor</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
-body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background-color: #0c0c0c;
-    background-image: url(https://systemmum.github.io/FCtoGD/background.jpg);
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    
-    color: #ffffff;
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 20px;
-    transition: background-color 0.4s ease;
-}
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #0c0c0c;
+            background-image: url(https://systemmum.github.io/FCtoGD/background.jpg);
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            color: #ffffff;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            position: relative;
+            transition: background-color 0.4s ease;
+        }
         body.success-bg {
             background-color: #00ff33 !important;
             color: #000000 !important;
+        }
+        .build-badge {
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #888888;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 3px 8px;
+            border-radius: 4px;
+            border: 1px solid #333333;
+        }
+        body.success-bg .build-badge {
+            color: #000000;
+            background: rgba(255, 255, 255, 0.7);
+            border-color: #999999;
         }
         h1 {
             text-align: center;
@@ -196,7 +213,9 @@ body {
 </head>
 <body>
 
-    <h1>NES 轉 GameDoctor (自動化鏡像多管線對齊版)</h1>
+    <div class="build-badge">Build: 20260701_1644_V1</div>
+
+    <h1>Famicom to GameDoctor Convertor</h1>
 
     <div class="container">
         <div class="upload-box" onclick="document.getElementById('fileInput').click()">
@@ -261,7 +280,7 @@ body {
         ]);
 
         // 【數據庫 C】CNROM (Mapper 3 + 32K PRG + 16K CHR) 標頭模版
-        // 🛠️ 55h 位元（索引 85）已依指示指定並固定為 0xC0
+        // 🛠️ 55h 位元（索引 85）固定為您設定的規格：0xC0
         const cnrom_32k_prg_head_template = [
             0x00, 0x00, 0x84, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 
             0x43, 0x2A, 0xFF, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
@@ -343,7 +362,7 @@ body {
                 else if (detectedMapper === 3 && prgSize === 32 && chrSize === 16) {
                     document.getElementById('vMapper').innerText += " (CNROM 32K/16K)";
                     badge.className = 'alert-badge badge-success';
-                    badge.innerHTML = `✅ 匹配成功：符合 <b>Mapper 3 + PRG 32K + CHR 16K</b> 流水線。將採用 0xC0 固定標頭拼接封裝！`;
+                    badge.innerHTML = `✅ 匹配成功：符合 <b>Mapper 3 + PRG 32K + CHR 16K</b> 流水線。將採用固定標頭 0xC0 進行純加法封裝！`;
                     convertBtn.innerText = "執行 CNROM 32K 完美加法封裝";
                     convertBtn.disabled = false;
                     log("🟢 精准分配：進入 [管道 3] CNROM 32K 固態加法封裝管道。");
@@ -456,7 +475,7 @@ body {
                 exportZip(zip, "UNROM_128K");
             }
 
-            // 🌟 【管道 3】: Mapper 3 + 32K PRG + 16K CHR (固定 0xC0 加法管線)
+            // 🌟 【管道 3】: Mapper 3 + 32K PRG + 16K CHR (純 0xC0 加法管線)
             else if (detectedMapper === 3 && prgSize === 32 && chrSize === 16) {
                 log("🚀 [管道 3] 啟動 CNROM 32K 固態加法流水線...");
                 
@@ -466,9 +485,9 @@ body {
                 log(`➔ 提取 PRG 32KB 區段：${part_8000h_prg.length} Bytes`);
                 log(`➔ 提取 CHR 16KB 區段：${part_4000h_chr.length} Bytes`);
 
-                // 載入預載模板，其 55h 已固定為結構配置 0xC0 
+                // 載入預載模板（其 55h 已按要求固定為結構配置 0xC0）
                 let prgHeader = new Uint8Array(cnrom_32k_prg_head_template);
-                log("➔ 狀態確任：標頭 0x55 處已套用固定數值 0xC0");
+                log("➔ 狀態確認：標頭 0x55 處已套用固定數值 0xC0");
 
                 // 純加法組合拼接
                 const totalSize = prgHeader.length + part_8000h_prg.length + cnrom_16k_chr_head.length + part_4000h_chr.length + cnrom_16k_chr_foot.length;
