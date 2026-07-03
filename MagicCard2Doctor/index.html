@@ -30,7 +30,6 @@
             transition: background 1s ease;
         }
         
-        /* 初始狀態完全隱藏背景圖，成功時才透過 JS 加載*/
         body.success-mode {
             background-image: url(https://systemmum.github.io/MagicCard2Doctor/MD2GD_bg.png);
             background-size: cover;
@@ -48,7 +47,6 @@
             pointer-events: none;
         }
 
-        /* 可隱藏的控制台主 UI 包裹層 */
         #mainUiWrapper {
             transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
             opacity: 1;
@@ -58,7 +56,7 @@
             opacity: 0;
             transform: scale(0.92);
             pointer-events: none;
-            display: none; /* 轉換成功後全面蒸發 */
+            display: none;
         }
 
         .build-badge {
@@ -67,11 +65,11 @@
             right: 20px;
             font-size: 11px;
             font-family: monospace;
-            color: #666666;
+            color: #888888;
             background: rgba(0, 0, 0, 0.6);
             padding: 4px 10px;
             border-radius: 20px;
-            border: 1px solid #222222;
+            border: 1px solid rgba(0, 255, 51, 0.3);
             letter-spacing: 0.5px;
         }
         
@@ -98,7 +96,7 @@
         .upload-box {
             border: 2px dashed rgba(0, 255, 51, 0.3);
             border-radius: 12px;
-            padding: 45px 20px;
+            padding: 60px 20px;
             text-align: center;
             background: rgba(0, 0, 0, 0.5);
             cursor: pointer;
@@ -119,83 +117,14 @@
         .file-info {
             margin-top: 20px;
             padding: 15px;
-            background: rgba(0, 255, 51, 0.05);
-            border-left: 4px solid #00ff33;
+            background: rgba(255, 0, 85, 0.05);
+            border-left: 4px solid #ff0055;
             border-radius: 4px;
             display: none;
             font-size: 14px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.2);
         }
         
-        .patch-control-panel {
-            margin-top: 20px;
-            padding: 15px 20px;
-            background: rgba(0, 0, 0, 0.4);
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-            display: flex;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-        .patch-label {
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            user-select: none;
-            width: 100%;
-            color: #dddddd;
-        }
-        /* 美化為科技感 Toggle Switch */
-        .switch-wrapper {
-            position: relative;
-            display: inline-block;
-            width: 40px;
-            height: 22px;
-            margin-right: 12px;
-        }
-        .patch-checkbox {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-        .slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-color: #333333;
-            transition: .3s;
-            border-radius: 22px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 14px;
-            width: 14px;
-            left: 3px;
-            bottom: 3px;
-            background-color: #888888;
-            transition: .3s;
-            border-radius: 50%;
-        }
-        .patch-checkbox:checked + .slider {
-            background-color: rgba(0, 255, 51, 0.2);
-            border-color: #00ff33;
-        }
-        .patch-checkbox:checked + .slider:before {
-            transform: translateX(18px);
-            background-color: #00ff33;
-            box-shadow: 0 0 8px #00ff33;
-        }
-        .patch-desc {
-            font-size: 13px;
-            color: #888888;
-            font-weight: normal;
-            margin-left: 8px;
-        }
-
         .info-panel {
             margin-top: 20px;
             padding: 20px;
@@ -238,69 +167,30 @@
             display: none;
             line-height: 1.4;
         }
-        .badge-success {
-            background-color: rgba(0, 255, 51, 0.06);
-            color: #00ff33;
-            border: 1px solid rgba(0, 255, 51, 0.2);
-            box-shadow: 0 0 15px rgba(0, 255, 51, 0.05);
-        }
         .badge-danger {
             background-color: rgba(255, 0, 85, 0.06);
             color: #ff0055;
-            border: 3px solid rgba(255, 0, 85, 0.2);
-        }
-        
-        .btn-container {
-            text-align: center;
-            margin-top: 30px;
-        }
-        button {
-            background-color: rgba(255, 255, 255, 0.03);
-            color: #555555;
-            border: 1px solid rgba(255,255,255,0.05);
-            padding: 14px 40px;
-            font-size: 15px;
-            font-weight: bold;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-            letter-spacing: 0.5px;
-        }
-        button:not(:disabled) {
-            background: linear-gradient(135deg, #00ff33 0%, #00aa22 100%);
-            color: #000000;
-            border: none;
-            box-shadow: 0 4px 20px rgba(0,255,51,0.25);
-        }
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 25px rgba(0,255,51,0.45);
-        }
-        button:active:not(:disabled) {
-            transform: translateY(1px);
-        }
-        button:disabled {
-            cursor: not-allowed;
+            border: 1px solid rgba(255, 0, 85, 0.2);
         }
         
         .log-box {
             margin-top: 25px;
             background: #040405;
-            color: #00ff33;
+            color: #ff0055;
             padding: 18px;
             border-radius: 8px;
             font-family: monospace;
             font-size: 12px;
             max-height: 200px;
             overflow-y: auto;
-            border: 1px solid rgba(0, 255, 51, 0.1);
+            border: 1px solid rgba(255, 0, 85, 0.15);
             display: none;
             white-space: pre-wrap;
             word-break: break-all;
             box-shadow: inset 0 2px 8px rgba(0,0,0,0.8);
         }
 
-        /* ==================== 🌟 巨型成功面板 🌟 ==================== */
+        /* ==================== 🌟 成功面板 🌟 ==================== */
         #successScreen {
             display: none;
             opacity: 0;
@@ -351,6 +241,7 @@
             color: #aaaaaa;
             margin-bottom: 30px;
             letter-spacing: 1px;
+            line-height: 1.5;
         }
         .btn-restart {
             background: transparent;
@@ -359,7 +250,8 @@
             padding: 10px 25px;
             font-size: 13px;
             border-radius: 6px;
-            box-shadow: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
         .btn-restart:hover {
             background: rgba(0, 255, 51, 0.1);
@@ -375,7 +267,7 @@
 <body>
 
     <canvas id="effectCanvas"></canvas>
-    <div class="build-badge">Build: 20260702_2130_MC_V6.3_DUALMODE</div>
+    <div class="build-badge">MC2GD_20260703_1419_V6.3</div>
 
     <!-- 🌐 核心主 UI 控制台 包裹層 -->
     <div id="mainUiWrapper">
@@ -384,26 +276,16 @@
         <div class="container">
             <div class="upload-box" onclick="document.getElementById('fileInput').click()">
                 <svg width="45" height="45" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                <p style="font-size: 15px; margin-top: 15px; font-weight: 600; letter-spacing: 0.5px;">點擊此處或拖曳 .mc 檔案到這裡</p>
-                <span style="color: #666666; font-size: 12px;">(支援 40200h 常規與 40400h 防拷雙模封裝)</span>
+                <p style="font-size: 15px; margin-top: 15px; font-weight: 600; letter-spacing: 0.5px;">將 .mc 檔案拖曳至此或點擊選取</p>
+                <span style="color: #666666; font-size: 12px;">系統將自動識別 40200h 常規 / 40400h 防拷特徵並即時導出</span>
                 <input type="file" id="fileInput" accept=".mc">
             </div>
 
-            <div class="patch-control-panel">
-                <label class="patch-label">
-                    <span class="switch-wrapper">
-                        <input type="checkbox" id="greyScreenPatchCheck" class="patch-checkbox">
-                        <span class="slider"></span>
-                    </span>
-                    <span>啟用灰色畫面相容性修正</span>
-                    <span class="patch-desc">(將 Disk A 的位址 55h 強制修改為 40h，防止實機卡灰屏)</span>
-                </label>
-            </div>
-
+            <!-- 僅在異常降級時展開的診斷面板組 -->
             <div id="fileInfo" class="file-info"></div>
 
             <div id="infoPanel" class="info-panel">
-                <div style="font-weight: bold; color: #00ff33; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px; font-size: 14px;" id="panelTitle">🔍 Magic Card 硬體指紋安全審查：</div>
+                <div style="font-weight: bold; color: #ff0055; border-bottom: 1px solid rgba(255,0,85,0.15); padding-bottom: 8px; font-size: 14px;">❌ 核心硬體特徵審查未通過：</div>
                 <div class="info-grid">
                     <div class="info-item"><span class="info-label">檔案總容量</span><span id="vFileSize" class="info-value">-</span></div>
                     <div class="info-item"><span class="info-label">容量合法性</span><span id="vSizeStatus" class="info-value">-</span></div>
@@ -413,21 +295,17 @@
                 <div id="alertBadge" class="alert-badge"></div>
             </div>
 
-            <div class="btn-container">
-                <button id="convertBtn" disabled>等待讀取檔案...</button>
-            </div>
-
             <div id="logBox" class="log-box"></div>
         </div>
     </div>
 
-    <!-- 🌟 巨型成功慶祝儀式面板 -->
+    <!-- 🌟 成功儀式面板 -->
     <div id="successScreen">
         <div class="success-icon">
             <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#00ff33" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
         </div>
         <h2 class="huge-success-title">轉換成功</h2>
-        <p class="success-subtitle">實機特徵校準與雙區塊分組物理映射組裝竣工！已成功導出 4 片精確大小的磁碟包！</p>
+        <p class="success-subtitle">硬體特徵位址直映技術校準竣工！<br>已依據物理映射分組成功導出 4 片完好磁碟包。</p>
         <button class="btn-restart" onclick="window.location.reload()">轉換新檔案</button>
     </div>
 
@@ -439,17 +317,13 @@
             logBox.scrollTop = logBox.scrollHeight;
         }
 
-        let mcBuffer = null;
-        let originalFileName = "game";
-        
         const SIZE_40200 = 0x40200; 
         const SIZE_40400 = 0x40400; 
-        let currentFileMode = null; 
 
         // ==================== [ ⚙️ Canvas 視覺動畫核心 ] ====================
         const canvas = document.getElementById('effectCanvas');
         const ctx = canvas.getContext('2d');
-        let animationMode = 'idle'; // idle (掃描線) | quantum (成功爆破) | glitch (錯誤數據雨)
+        let animationMode = 'idle'; 
         let particles = [];
         let scanLines = [];
 
@@ -460,7 +334,6 @@
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
 
-        // 初始化背景微弱掃描線與浮游微粒
         function initIdleEffects() {
             scanLines = [];
             particles = [];
@@ -483,8 +356,6 @@
         function startQuantumBurst() {
             animationMode = 'quantum';
             particles = [];
-            log("🎆 <span style='color:#00ff33;'><b>[視覺核心]</b>：切換至終極量子爆破慶祝動畫層。</span>");
-            // 爆發出大量帶有尾跡的高級微粒
             for (let i = 0; i < 150; i++) {
                 let angle = Math.random() * Math.PI * 2;
                 let speed = Math.random() * 6 + 2;
@@ -496,14 +367,14 @@
                     radius: Math.random() * 3 + 1,
                     alpha: 1,
                     decay: Math.random() * 0.01 + 0.005,
-                    color: `hsl(${Math.random() * 40 + 110}, 100%, 60%)` // 偏向薄荷綠與螢光綠的霓虹色
+                    color: `hsl(${Math.random() * 40 + 110}, 100%, 60%)`
                 });
             }
         }
 
         function startGlitchRain() {
             animationMode = 'glitch';
-            particles = []; // 拿來當亂碼雨滴使用
+            particles = []; 
             for (let i = 0; i < 80; i++) {
                 particles.push({
                     x: Math.random() * canvas.width,
@@ -514,7 +385,6 @@
                     opacity: Math.random() * 0.3 + 0.1
                 });
             }
-            log("🌧️ <span style='color:#ff0055;'><b>[視覺核心]</b>：安全特徵異常，切換至雷達故障雜訊電流層。</span>");
         }
 
         function loopEffects() {
@@ -522,7 +392,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (animationMode === 'idle') {
-                // 1. 繪製微弱的橫向掃描軌道線
                 ctx.strokeStyle = 'rgba(0, 255, 51, 1)';
                 for(let i=0; i<scanLines.length; i++) {
                     let s = scanLines[i];
@@ -537,7 +406,6 @@
                     s.y += s.speed;
                     if(s.y > canvas.height) s.y = 0;
                 }
-                // 2. 輕量浮游微粒
                 for(let i=0; i<particles.length; i++) {
                     let p = particles[i];
                     ctx.beginPath();
@@ -550,14 +418,10 @@
                 }
             } 
             else if (animationMode === 'quantum') {
-                // 成功：高質感量子爆破
                 for (let i = particles.length - 1; i >= 0; i--) {
                     let p = particles[i];
-                    p.x += p.vx;
-                    p.y += p.vy;
-                    p.vx *= 0.98; // 輕微空氣阻力
-                    p.vy *= 0.98;
-                    p.vy += 0.02; // 微弱重力下墜
+                    p.x += p.vx; p.y += p.vy;
+                    p.vx *= 0.98; p.vy *= 0.98; p.vy += 0.02;
                     p.alpha -= p.decay;
 
                     if (p.alpha <= 0) {
@@ -575,24 +439,8 @@
                     ctx.fill();
                     ctx.restore();
                 }
-                // 持續在中央補上一點點微弱的散射微粒
-                if(Math.random() < 0.3 && particles.length < 200) {
-                    let angle = Math.random() * Math.PI * 2;
-                    let speed = Math.random() * 3 + 1;
-                    particles.push({
-                        x: canvas.width / 2,
-                        y: canvas.height / 2,
-                        vx: Math.cos(angle) * speed,
-                        vy: Math.sin(angle) * speed,
-                        radius: Math.random() * 2 + 0.5,
-                        alpha: 1,
-                        decay: 0.02,
-                        color: '#00ff33'
-                    });
-                }
             } 
             else if (animationMode === 'glitch') {
-                // 失敗：霓虹紅色的故障電流數據雨
                 ctx.strokeStyle = '#ff0055';
                 for (let i = 0; i < particles.length; i++) {
                     let r = particles[i];
@@ -601,7 +449,7 @@
                     ctx.lineWidth = r.weight;
                     ctx.beginPath();
                     ctx.moveTo(r.x, r.y);
-                    ctx.lineTo(r.x + (Math.random() - 0.5) * 4, r.y + r.length); // 帶有些微橫向抖動
+                    ctx.lineTo(r.x + (Math.random() - 0.5) * 4, r.y + r.length);
                     ctx.stroke();
                     ctx.restore();
                     
@@ -615,7 +463,7 @@
         }
         loopEffects();
 
-        // ==================== [ 🛠️ 數據配置區 (100% 保留原本二進位常數) ] ====================
+        // ==================== [ 🛠️ 原始二進位硬體數據常數 ] ====================
         const block_headers_40200h = [
             [	0x00, 0x00, 0x83, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0xFF, 0x42,
 				0x45, 0x4E, 0x4E, 0x59, 0x00, 0x00, 0x00, 0x00, 0x0F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x77, 0x01, 0x27, 0x49, 0x61, 0x00, 
@@ -651,203 +499,164 @@
         const block_headers_40400h = [
             [], 
             [0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x10, 0x00, 0x00, 0x04], 
-            
-			[0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0x00, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x20, 0x00, 0x00, 0x04], 
-            
-			[0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x30, 0x00, 0x00, 0x04], 
-            
-			[0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0x00, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x40, 0x00, 0x00, 0x04], 
-            
-			[0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x50, 0x00, 0x00, 0x04], 
-            
-			[0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0x00, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x60, 0x00, 0x00, 0x04], 
-            
-			[0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x70, 0x00, 0x00, 0x04]  
+            [0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0x00, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x20, 0x00, 0x00, 0x04], 
+            [0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x30, 0x00, 0x00, 0x04], 
+            [0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0x00, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x02, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x40, 0x00, 0x00, 0x04], 
+            [0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x50, 0x00, 0x00, 0x04], 
+            [0x00, 0x00, 0x82, 0x01, 0x2A, 0x4E, 0x49, 0x4E, 0x54, 0x45, 0x4E, 0x44, 0x4F, 0x2D, 0x48, 0x56, 0x43, 0x2A, 0x00, 0x42, 0x45, 0x4E, 0x4E, 0x59, 0x03, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x02, 0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x60, 0x00, 0x00, 0x04], 
+            [0x00, 0x00, 0x03, 0x00, 0x00, 0x32, 0x30, 0x32, 0x30, 0x30, 0x38, 0x32, 0x31, 0x00, 0x80, 0x00, 0x80, 0x70, 0x00, 0x00, 0x04]  
         ];
 
         const disk_end_marker = [0x00, 0x00];
 
-        // ==================== [ 🔍 安全審查系統 ] ====================
+        // ==================== [ 📥 檔案監聽與主動轉換流 ] ====================
         document.getElementById('fileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
-            document.body.classList.remove('success-mode');
-            document.getElementById('successScreen').classList.remove('show');
-            initIdleEffects(); // 回復掃描線
+            // 重置降級診斷 UI 狀態
+            document.getElementById('infoPanel').style.display = 'none';
+            document.getElementById('fileInfo').style.display = 'none';
+            document.getElementById('logBox').style.display = 'none';
+            document.getElementById('logBox').innerHTML = '';
+            initIdleEffects();
             animationMode = 'idle';
-            
-            originalFileName = file.name.replace(/\.mc$/i, '');
 
+            const originalFileName = file.name.replace(/\.mc$/i, '');
             const reader = new FileReader();
-            reader.onload = function(event) {
-                mcBuffer = event.target.result;
-                const mcData = new Uint8Array(mcBuffer);
-                const actualSize = mcData.length;
 
+            reader.onload = function(event) {
+                const mcData = new Uint8Array(event.target.result);
+                const actualSize = mcData.length;
+                let currentFileMode = null;
                 let isSizeValid = false;
+
+                // 1. 容量合法性判斷
                 if (actualSize === SIZE_40200) {
                     isSizeValid = true;
                     currentFileMode = '40200h';
-                    document.getElementById('vSizeStatus').innerText = "OK (符合常規 0x40200)";
                 } else if (actualSize === SIZE_40400) {
                     isSizeValid = true;
                     currentFileMode = '40400h';
-                    document.getElementById('vSizeStatus').innerText = "OK (符合防拷 0x40400)";
-                } else {
-                    currentFileMode = null;
-                    document.getElementById('vSizeStatus').innerText = "❌ 錯誤 (未知規格容量)";
                 }
 
-                document.getElementById('vFileSize').innerText = `${actualSize} 位元組`;
-
+                // 2. 原始零區 (0x10 - 0x1FF) 特徵校驗
                 let isZeroZoneValid = true;
-                for (let i = 0; i < 512; i++) {
-                    if (i >= 0x10 && i <= 0x1FF) {
-                        if (mcData[i] !== 0x00) {
-                            isZeroZoneValid = false;
-                            break;
-                        }
+                for (let i = 0x10; i <= 0x1FF; i++) {
+                    if (mcData[i] !== 0x00) {
+                        isZeroZoneValid = false;
+                        break;
                     }
                 }
-                document.getElementById('vZeroStatus').innerText = isZeroZoneValid ? "OK (全為 0x00)" : "❌ 異常 (含有雜訊數據)";
 
-                document.getElementById('infoPanel').style.display = 'block';
-                document.getElementById('fileInfo').style.display = 'block';
-                document.getElementById('fileInfo').innerHTML = `<strong>已載入原始硬體備份：</strong> ${file.name} <span style="color:#00ff33; margin-left:10px;">[模式：${currentFileMode || '未知'}]</span>`;
-                document.getElementById('logBox').innerHTML = '';
-
-                const badge = document.getElementById('alertBadge');
-                badge.style.display = 'block';
-                const convertBtn = document.getElementById('convertBtn');
-
-                if (isSizeValid && isZeroZoneValid) {
-                    badge.className = 'alert-badge badge-success';
-                    badge.innerHTML = `✅ 安全審查通過：4片等位磁碟物理映射管道已解鎖。可以開始轉換。`;
-                    convertBtn.innerText = currentFileMode === '40400h' ? "執行防拷型雙區塊分組直映工程" : "執行雙區塊分組硬體直映工程";
-                    convertBtn.disabled = false;
-                    log(`🟢 安全機制：硬體指紋校準成功，切換至 ${currentFileMode} 解析核心。`);
-                } else {
+                // [🚨 異常分支] 觸發智慧降級診斷
+                if (!isSizeValid || !isZeroZoneValid) {
+                    document.getElementById('vFileSize').innerText = `${actualSize} 位元組`;
+                    document.getElementById('vSizeStatus').innerText = isSizeValid ? `OK (${currentFileMode})` : "❌ 錯誤 (非預期硬體鏡像大小)";
+                    document.getElementById('vZeroStatus').innerText = isZeroZoneValid ? "OK" : "❌ 異常 (零區區段內含有雜訊代碼)";
+                    
+                    document.getElementById('fileInfo').style.display = 'block';
+                    document.getElementById('fileInfo').innerHTML = `<strong>審查終止檔案：</strong> ${file.name}`;
+                    document.getElementById('infoPanel').style.display = 'block';
+                    
+                    const badge = document.getElementById('alertBadge');
+                    badge.style.display = 'block';
                     badge.className = 'alert-badge badge-danger';
-                    badge.innerHTML = `❌ 安全審查拒絕：檔案大小或特徵不符！`;
-                    convertBtn.innerText = "特徵未通過，拒絕轉換";
-                    convertBtn.disabled = true;
-                    startGlitchRain(); // 啟動警示數據紅雨
+                    badge.innerHTML = `❌ 安全審查拒絕：二進位結構與實機硬體指紋不符，核心鎖定防止毀損輸出。`;
+                    
+                    log(`[硬體審查異常報告]`);
+                    log(`-> 異常代碼：${!isSizeValid ? 'ERR_SIZE_MISMATCH' : 'ERR_ZEROZONE_CORRUPTED'}`);
+                    log(`-> 檔案真實長度：${actualSize} 位元組`);
+                    log(`-> 零區首位干擾元：0x${mcData.slice(0x10, 0x50).reduce((acc, x) => acc + x.toString(16).padStart(2,'0'), '')}...`);
+                    
+                    startGlitchRain(); // 啟動警示故障紅雨
+                    return;
                 }
+
+                // [🟢 正常分支] 無感直達極速轉換
+                const zip = new JSZip();
+                const romCoreTemp = mcData.subarray(0x200); // 剝離 512 位元組前端
+                let extracted200h = null;
+                let romCore = null;
+
+                if (currentFileMode === '40400h') {
+                    extracted200h = romCoreTemp.subarray(0, 0x200); 
+                    romCore = romCoreTemp.subarray(0x200); // 防止防拷區造成的 Block 索引偏移
+                } else {
+                    romCore = romCoreTemp;
+                }
+
+                const blockSize = 0x8000; // 32KiB
+                let compositeBlocks = [];
+
+                for (let i = 0; i < 8; i++) {
+                    const startPos = i * blockSize;
+                    const rawBlock = romCore.subarray(startPos, startPos + blockSize);
+                    let currentHeader;
+
+                    if (currentFileMode === '40400h') {
+                        if (i === 0) {
+                            currentHeader = [...config_40400_top, ...extracted200h, ...config_40400_bottom];
+                            // 🌟 核心發現：防拷模式下原始 01h 直映至輸出 Block 0 的 26Ah
+                            currentHeader[0x26A] = mcData[0x01]; 
+                        } else {
+                            currentHeader = [...block_headers_40400h[i]];
+                        }
+                    } else {
+                        currentHeader = [...block_headers_40200h[i]];
+                        if (i === 0) {
+                            // 🌟 核心發現：常規模式下原始 00h/01h 直映回 Disk A 標頭 54h/55h
+                            currentHeader[0x54] = mcData[0x00];
+                            currentHeader[0x55] = mcData[0x01];
+                        }
+                    }
+
+                    const headerUint8 = new Uint8Array(currentHeader);
+                    const compBlock = new Uint8Array(headerUint8.length + rawBlock.length);
+                    compBlock.set(headerUint8, 0);
+                    compBlock.set(rawBlock, headerUint8.length);
+                    compositeBlocks.push(compBlock);
+                }
+
+                const endMarker = new Uint8Array(disk_end_marker);
+                const diskLetters = ['A', 'B', 'C', 'D'];
+
+                for (let d = 0; d < 4; d++) {
+                    const blockIdx1 = d * 2;
+                    const blockIdx2 = d * 2 + 1;
+
+                    const b1 = compositeBlocks[blockIdx1];
+                    const b2 = compositeBlocks[blockIdx2];
+
+                    const diskSliceRaw = new Uint8Array(b1.length + b2.length);
+                    diskSliceRaw.set(b1, 0);
+                    diskSliceRaw.set(b2, b1.length);
+
+                    const finalFileContent = new Uint8Array(diskSliceRaw.length + endMarker.length);
+                    finalFileContent.set(diskSliceRaw, 0);
+                    finalFileContent.set(endMarker, diskSliceRaw.length);
+
+                    zip.file(`${originalFileName}.${diskLetters[d]}`, finalFileContent);
+                }
+
+                // 執行打包下載並過渡 UI
+                zip.generateAsync({ type: "blob" }).then(function(content) {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(content);
+                    link.download = `${originalFileName}_MC2GD_export.zip`;
+                    link.click();
+                    
+                    document.body.classList.add('success-mode');
+                    setTimeout(() => {
+                        document.getElementById('successScreen').classList.add('show');
+                        startQuantumBurst(); // 炸裂螢光量子綠粒子
+                    }, 200);
+                });
             };
             reader.readAsArrayBuffer(file);
         });
 
-        // ==================== [ 🛠️ 轉換核心與分碟包裝工程 (100% 完整保留原本運算) ] ====================
-        document.getElementById('convertBtn').addEventListener('click', function() {
-            if (!mcBuffer || !currentFileMode) return;
-
-            const mcData = new Uint8Array(mcBuffer);
-            const zip = new JSZip();
-            const isPatchEnabled = document.getElementById('greyScreenPatchCheck').checked;
-
-            log(`🚀 啟動第一階段清洗：剝離最前段 512 位元組原始零區...`);
-            const romCoreTemp = mcData.subarray(0x200); 
-
-            let extracted200h = null;
-            let romCore = null;
-
-            if (currentFileMode === '40400h') {
-                log(`🎯 進入防拷解析：自核心純資料起點（原檔 0x200 處）抽出 512 位元組防拷數據...`);
-                extracted200h = romCoreTemp.subarray(0, 0x200); 
-                log(`✂️ 【核心修正】：將此 512 位元組從資料流中徹底切除（防止後續 Block 切片移位）...`);
-                romCore = romCoreTemp.subarray(0x200); 
-            } else {
-                romCore = romCoreTemp;
-            }
-
-            log(`➔ 清洗與邊界校正竣工！真正用於 Block 切片的核心資料長度：${romCore.length} 位元組`);
-
-            const blockSize = 0x8000; 
-            let compositeBlocks = [];
-
-            log(`⚙️ 進入分流加工程序：採用 [ ${currentFileMode} ] 機制注入對應 Header...`);
-
-            for (let i = 0; i < 8; i++) {
-                const startPos = i * blockSize;
-                const rawBlock = romCore.subarray(startPos, startPos + blockSize);
-                
-                let currentHeader;
-
-                if (currentFileMode === '40400h') {
-                    if (i === 0) {
-                        currentHeader = [...config_40400_top, ...extracted200h, ...config_40400_bottom];
-                        log(`   ✨ Block 1 動態拼接成型：Top (${config_40400_top.length}B) + 特徵數據 (${extracted200h.length}B) + Bottom (${config_40400_bottom.length}B)`);
-                    } else {
-                        currentHeader = [...block_headers_40400h[i]];
-                    }
-                } else {
-                    currentHeader = [...block_headers_40200h[i]];
-                }
-
-                if (i === 0 && isPatchEnabled) {
-                    if (currentHeader.length > 0x55) {
-                        const originalValue = currentHeader[0x55].toString(16).toUpperCase().padStart(2, '0');
-                        currentHeader[0x55] = 0x40;
-                        log(`   ⚠️ <span style='color:#ffcc00;'><b>[灰屏修補機制觸發]</b>：已將 Disk A 標頭 Address 55h 由 ${originalValue}h 強制覆寫為 40h！</span>`);
-                    }
-                }
-                
-                const headerUint8 = new Uint8Array(currentHeader);
-                const compBlock = new Uint8Array(headerUint8.length + rawBlock.length);
-                compBlock.set(headerUint8, 0);
-                compBlock.set(rawBlock, headerUint8.length);
-
-                compositeBlocks.push(compBlock);
-                log(`   ➔ 區塊 ${i + 1}: 已注入 Header (${headerUint8.length}B) + 數據 (32KiB)，總長度: ${compBlock.length} 位元組`);
-            }
-
-            const endMarker = new Uint8Array(disk_end_marker);
-            const diskLetters = ['A', 'B', 'C', 'D'];
-
-            log("⚙️ 輸出 4 片磁碟");
-
-            for (let d = 0; d < 4; d++) {
-                const blockIdx1 = d * 2;
-                const blockIdx2 = d * 2 + 1;
-
-                const b1 = compositeBlocks[blockIdx1];
-                const b2 = compositeBlocks[blockIdx2];
-
-                const validDataLength = b1.length + b2.length;
-                const diskSliceRaw = new Uint8Array(validDataLength);
-                diskSliceRaw.set(b1, 0);
-                diskSliceRaw.set(b2, b1.length);
-
-                const finalFileContent = new Uint8Array(diskSliceRaw.length + endMarker.length);
-                finalFileContent.set(diskSliceRaw, 0);
-                finalFileContent.set(endMarker, diskSliceRaw.length);
-
-                const outFileName = `${originalFileName}.${diskLetters[d]}`;
-                zip.file(outFileName, finalFileContent);
-                
-                const hexSize = finalFileContent.length.toString(16).toUpperCase() + 'h';
-                log(`   ➔ 封裝完畢: [ ${outFileName} ] 最終檔案大小: <b>${hexSize}</b> (${finalFileContent.length}B)`);
-            }
-
-            zip.generateAsync({ type: "blob" }).then(function(content) {
-                const link = document.createElement('a');
-                link.href = URL.createObjectURL(content);
-                link.download = `${originalFileName}_Doctor_V6.3_DualMode.zip`;
-                link.click();
-                
-                // ⚡ 核心視覺過渡觸發：隱藏 UI、顯示背景、顯示巨型繁中成功畫面、啟動粒子爆破
-                document.body.classList.add('success-mode');
-                
-                setTimeout(() => {
-                    const successScreen = document.getElementById('successScreen');
-                    successScreen.classList.add('show');
-                    startQuantumBurst(); // 炸裂量子粒子
-                }, 400); // 留下一點滑順的淡出緩衝時間
-            });
-        });
-
-        // ==================== [ 拖曳配置 ] ====================
+        // ==================== [ 🤝 拖曳互動設定 ] ====================
         const dropBox = document.querySelector('.upload-box');
         ['dragenter', 'dragover'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = '#00ff33'; }));
         ['dragleave', 'drop'].forEach(eName => dropBox.addEventListener(eName, (e) => { e.preventDefault(); dropBox.style.borderColor = 'rgba(0, 255, 51, 0.3)'; }));
