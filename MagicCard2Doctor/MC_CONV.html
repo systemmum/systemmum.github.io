@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VintageGadgetHK - 6502 Patcher System</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            font-family: 'Press Start 2P', monospace;
+            color: #fff;
+            image-rendering: pixelated;
+        }
+
+        body {
+            background-color: #000;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        /* INTRO LAYER: Custom 1980s Hardware BIOS Sequence Overlay */
+        #fds-bios-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 80px 20px;
+        }
+
+        .fds-header-text {
+            font-size: 16px;
+            letter-spacing: 2px;
+            text-align: center;
+            line-height: 2;
+            animation: fdsColorCycle 1.5s steps(1) infinite;
+        }
+
+        @keyframes fdsColorCycle {
+            0%   { color: #646464; }
+            33%  { color: #d800cc; }
+            66%  { color: #f8b800; }
+        }
+
+        .banner-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100px;
+            position: relative;
+        }
+
+        /* Hardware Slide-In and Elastic Jitter Alignment Snap */
+        .custom-banner {
+            font-size: 28px;
+            color: #f8b800;
+            white-space: nowrap;
+            position: absolute;
+            transform: translateX(100vw);
+            animation: hardwareScroll 2.8s cubic-bezier(0.1, 0.85, 0.25, 1) forwards;
+        }
+
+        @keyframes hardwareScroll {
+            0%   { transform: translateX(100vw); }
+            70%  { transform: translateX(-30px); } 
+            82%  { transform: translateX(15px); }  
+            92%  { transform: translateX(-5px); }  
+            100% { transform: translateX(0px) translateY(4px); } 
+        }
+
+        /* Pure CSS Mascot Runway Track */
+        .sprite-track {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            height: 70px;
+            border-bottom: 4px dashed #333;
+            overflow: hidden;
+        }
+
+        .runner-group {
+            position: absolute;
+            display: flex;
+            gap: 20px;
+            align-items: flex-end;
+            bottom: 4px;
+            animation: spriteChase 4.5s linear infinite;
+        }
+
+        @keyframes spriteChase {
+            0%   { left: -160px; }
+            100% { left: 100%; }
+        }
+
+        /* 16x16 Pixel Art Grid Matrix Translators */
+        .pixel-sprite {
+            display: grid;
+            grid-template-columns: repeat(16, 3px);
+            grid-template-rows: repeat(16, 3px);
+        }
+
+        /* MAIN APP LAYER: Protected layout boundaries with viewport auto-expand */
+        .app-hidden {
+            display: none !important;
+        }
+
+        .fds-container {
+            background: #000;
+            border: 10px solid #a81000;
+            box-shadow: 0 0 0 4px #f8b800, 0 10px 40px rgba(0,0,0,0.9);
+            width: 100%;
+            max-width: 800px;
+            padding: 30px 20px;
+            margin-top: 20px;
+            margin-bottom: 50px;
+            animation: crtPowerOn 0.3s ease-out;
+        }
+
+        @keyframes crtPowerOn {
+            0%   { transform: scaleY(0.01) scaleX(0); filter: brightness(3); }
+            50%  { transform: scaleY(0.01) scaleX(1); filter: brightness(2); }
+            100% { transform: scaleY(1) scaleX(1); filter: brightness(1); }
+        }
+
+        .fds-marquee-window {
+            width: 100%;
+            overflow: hidden;
+            background: #000;
+            border-bottom: 4px solid #f8b800;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+
+        .fds-marquee-text {
+            display: inline-block;
+            white-space: nowrap;
+            font-size: 11px;
+            color: #f8b800;
+            animation: fdsScroll 14s linear infinite;
+        }
+
+        @keyframes fdsScroll {
+            0% { transform: translate3d(100%, 0, 0); }
+            100% { transform: translate3d(-100%, 0, 0); }
+        }
+
+        .disk-zone {
+            border: 4px dashed #f8b800;
+            background: #111;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 25px;
+        }
+        .disk-zone:hover { background: #1a1a1a; border-color: #fff; }
+        
+        .disk-prompt {
+            font-size: 11px;
+            color: #f8b800;
+            line-height: 2;
+            animation: fdsBlink 1s infinite steps(2);
+        }
+
+        @keyframes fdsBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+
+        .section-title {
+            color: #a81000;
+            background: #f8b800;
+            padding: 6px;
+            font-size: 10px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            display: inline-block;
+        }
+
+        .bulk-actions {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 15px;
+        }
+
+        button {
+            background: #000;
+            border: 3px solid #f8b800;
+            color: #f8b800;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        button:hover { background: #f8b800; color: #000; }
+        .btn-main { border-color: #a81000; color: #a81000; background: #f8b800; }
+        .btn-main:hover { background: #a81000; color: #fff; }
+
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 9px; }
+        th, td { border: 3px solid #222; padding: 12px 8px; text-align: left; }
+        th { background: #111; color: #f8b800; }
+        
+        .no-files { border: 3px dotted #222; padding: 20px; text-align: center; color: #555; font-size: 9px; }
+        input[type="checkbox"] { transform: scale(1.4); margin-right: 5px; accent-color: #a81000; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+</head>
+<body>
+
+<div id="fds-bios-screen">
+    <div class="fds-header-text">
+        FAMILY COMPUTER<br>
+        DISK SYSTEM
+    </div>
+
+    <div class="banner-container">
+        <div class="custom-banner">VintageGadgetHK</div>
+    </div>
+
+    <div class="sprite-track">
+        <div class="runner-group">
+            <div class="pixel-sprite" id="doctor-sprite"></div>
+            <div class="pixel-sprite" id="card-sprite"></div>
+        </div>
+    </div>
+</div>
+
+<div class="fds-container app-hidden" id="main-application">
+    <div class="fds-marquee-window">
+        <div class="fds-marquee-text">
+            * POWERED BY VINTAGEGADGETHK * 6502 INTEGRITY BATCH CONTROL UTILITY * READY TO PROCESS *
+        </div>
+    </div>
+
+    <div class="disk-zone" onclick="document.getElementById('file-input').click()">
+        <div class="disk-prompt">
+            &lt; INSERT DISK FILE &gt;<br>
+            DROP .MC DISK IMAGES HERE TO MOUNT TARGETS
+        </div>
+        <input type="file" id="file-input" multiple accept=".mc" onchange="handleFiles(this.files)">
+    </div>
+
+    <div>
+        <span class="section-title">📁 MODIFICATION BUFFER QUEUE</span>
+        <div id="actions-patch-zone" class="bulk-actions" style="display:none;">
+            <button onclick="toggleSelectAll(true)">SET ALL</button>
+            <button onclick="toggleSelectAll(false)">CLR ALL</button>
+            <button class="btn-main" onclick="patchAndZipSelected()">RUN INTERCEPT & SAVE ZIP</button>
+        </div>
+        <div id="table-patch-wrapper">
+            <div class="no-files">- CURRENTLY EMPTY -</div>
+        </div>
+    </div>
+
+    <div>
+        <span class="section-title">✓ VERIFIED PROTECTED / CLEAN SETS</span>
+        <div id="table-clean-wrapper">
+            <div class="no-files">- NO DISK ENTRIES PARSED YET -</div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Color Palette mapping variables for pure code matrix compilation
+    const R = '#D80000'; // System Frame Red
+    const Y = '#F8B800'; // Enclosure Yellow Gold
+    const B = '#0044D8'; // Deep Label Blue
+    const W = '#FFFFFF'; // Bright Uniform White
+    const K = '#000000'; // Diagnostic Shadow Black
+    const S = '#F8D8A0'; // Retro Pale Skin Tone
+    const G = '#7C7C7C'; // Device Plastic Iron Gray
+    const O = 'transparent';
+
+    // 16x16 coordinate map layout array for the Game Doctor Unit
+    const doctorMap = [
+        O,O,O,O,R,R,R,R,R,R,O,O,O,O,O,O,
+        O,O,O,R,R,R,R,R,R,R,R,R,O,O,O,O,
+        O,O,O,G,G,G,S,S,K,S,G,O,O,O,O,O,
+        O,O,G,S,G,S,S,S,K,S,S,S,O,O,O,O,
+        O,O,G,S,G,G,S,S,S,S,G,S,O,O,O,O,
+        O,O,O,G,S,S,S,S,S,G,G,O,O,O,O,O,
+        O,O,O,O,S,S,S,S,S,S,O,O,O,O,O,O,
+        O,O,O,R,R,W,R,R,R,W,R,R,O,O,O,O,
+        O,O,R,R,R,W,W,W,W,W,R,R,R,O,O,O,
+        O,R,R,R,W,K,W,W,W,K,W,R,R,R,O,O,
+        W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,O,
+        W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,O,
+        O,O,W,W,W,W,O,O,O,W,W,W,W,O,O,O,
+        O,O,G,G,G,O,O,O,O,O,G,G,G,O,O,O,
+        O,G,G,G,G,O,O,O,O,O,G,G,G,G,O,O,
+        O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O
+    ];
+
+    // 16x16 coordinate map layout array for the Sentient Magic Card Module
+    const cardMap = [
+        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
+        O,Y,Y,B,B,B,B,B,B,B,B,B,B,Y,Y,O,
+        Y,Y,B,B,B,B,B,B,B,B,B,B,B,B,Y,Y,
+        Y,Y,B,W,W,B,B,B,B,W,W,B,B,B,Y,Y,
+        Y,Y,B,W,K,B,B,B,B,W,K,B,B,B,Y,Y,
+        Y,Y,B,B,B,B,B,B,B,B,B,B,B,B,Y,Y,
+        Y,Y,B,B,B,R,R,R,R,R,R,B,B,B,Y,Y,
+        O,Y,Y,B,B,B,B,B,B,B,B,B,B,Y,Y,O,
+        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
+        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
+        O,O,G,G,G,G,G,G,G,G,G,G,G,G,O,O,
+        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
+        O,O,O,Y,Y,Y,O,O,O,O,Y,Y,Y,O,O,O,
+        O,O,O,Y,Y,Y,O,O,O,O,Y,Y,Y,O,O,O,
+        O,O,Y,Y,Y,Y,O,O,O,O,Y,Y,Y,Y,O,O,
+        O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O
+    ];
+
+    function drawCustomSprite(elementId, colorArray) {
+        let containerHTML = '';
+        colorArray.forEach(pixelColor => {
+            containerHTML += `<div style="background:${pixelColor}"></div>`;
+        });
+        document.getElementById(elementId).innerHTML = containerHTML;
+    }
+    
+    // Mount the code-compiled matrices into the UI runner nodes
+    drawCustomSprite('doctor-sprite', doctorMap);
+    drawCustomSprite('card-sprite', cardMap);
+
+    // Boot motor delay timing
+    setTimeout(() => {
+        let intro = document.getElementById('fds-bios-screen');
+        let app = document.getElementById('main-application');
+        
+        document.body.style.backgroundColor = '#fff';
+        setTimeout(() => {
+            document.body.style.backgroundColor = '#000';
+            intro.remove(); 
+            app.classList.remove('app-hidden');
+        }, 60);
+    }, 4500);
+
+    // ----- BATCH SYSTEM LOGIC CORE -----
+    let loadedFiles = [];
+
+    function handleFiles(files) {
+        if (!files.length) return;
+        for (let file of files) {
+            let reader = new FileReader();
+            reader.onload = function(e) {
+                let uint8Array = new Uint8Array(e.target.result);
+                let match = findSignature(uint8Array);
+                let needsPatch = false, oldBytesStr = 'N/A', offsetVal = -1;
+
+                if (match) {
+                    offsetVal = match.offset;
+                    oldBytesStr = match.oldBytes;
+                    if (match.oldBytes !== "EA EA") needsPatch = true;
+                }
+
+                loadedFiles.push({
+                    fileObj: file, data: uint8Array, offset: offsetVal,
+                    oldBytes: oldBytesStr, needsPatch: needsPatch
+                });
+                renderLists();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+    }
+
+    function findSignature(arr) {
+        for (let i = 0; i < arr.length - 12; i++) {
+            if (
+                arr[i] === 0xAD && arr[i+1] === 0x00 && arr[i+2] === 0x80 && 
+                arr[i+3] === 0xC9 && arr[i+5] === 0xF0 && arr[i+6] === 0x05 &&                   
+                arr[i+7] === 0xA9 && arr[i+8] === 0x80 && arr[i+9] === 0x8D                                            
+            ) {
+                let targetIdx = i + 10;
+                let b1 = arr[targetIdx].toString(16).toUpperCase().padStart(2, '0');
+                let b2 = arr[targetIdx+1].toString(16).toUpperCase().padStart(2, '0');
+                return { offset: targetIdx, oldBytes: `${b1} ${b2}` };
+            }
+        }
+        return null;
+    }
+
+    function renderLists() {
+        let patchWrapper = document.getElementById('table-patch-wrapper');
+        let cleanWrapper = document.getElementById('table-clean-wrapper');
+        let actionZone = document.getElementById('actions-patch-zone');
+
+        let patchFiles = loadedFiles.filter(f => f.needsPatch);
+        let cleanFiles = loadedFiles.filter(f => !f.needsPatch);
+
+        actionZone.style.display = patchFiles.length > 0 ? 'flex' : 'none';
+
+        if (!patchFiles.length) {
+            patchWrapper.innerHTML = `<div class="no-files">- CURRENTLY EMPTY -</div>`;
+        } else {
+            let html = `<table><thead><tr><th width="50">SET</th><th>FILE NAME</th><th>OFFSET</th><th>TARGET</th><th>STATUS</th></tr></thead><tbody>`;
+            loadedFiles.forEach((file, index) => {
+                if (file.needsPatch) {
+                    html += `<tr><td><input type="checkbox" id="chk-${index}" checked></td><td>${file.fileObj.name}</td><td>0x${file.offset.toString(16).toUpperCase()}</td><td><code>${file.oldBytes}</code></td><td style="color:#f8b800;">READY</td></tr>`;
+                }
+            });
+            patchWrapper.innerHTML = html + `</tbody></table>`;
+        }
+
+        if (!cleanFiles.length) {
+            cleanWrapper.innerHTML = `<div class="no-files">- NO DISK ENTRIES PARSED YET -</div>`;
+        } else {
+            let html = `<table><thead><tr><th>FILE NAME</th><th>NOTES</th><th>STATUS</th></tr></thead><tbody>`;
+            loadedFiles.forEach((file) => {
+                if (!file.needsPatch) {
+                    let note = file.offset === -1 ? "LOCK VECTOR NOT PRESENT" : "INTEGRITY VERIFIED (EA EA)";
+                    html += `<tr style="color: #555;"><td>${file.fileObj.name}</td><td>${note}</td><td style="color:#00a800;">✓ PASSED</td></tr>`;
+                }
+            });
+            cleanWrapper.innerHTML = html + `</tbody></table>`;
+        }
+    }
+
+    function toggleSelectAll(select) {
+        loadedFiles.forEach((file, index) => {
+            let chk = document.getElementById(`chk-${index}`);
+            if (chk) chk.checked = select;
+        });
+    }
+
+    function patchAndZipSelected() {
+        let zip = new JSZip(), anyPatched = false;
+        
+        loadedFiles.forEach((file, index) => {
+            let chk = document.getElementById(`chk-${index}`);
+            if (chk && chk.checked && file.needsPatch) {
+                file.data[file.offset] = 0xEA;
+                file.data[file.offset + 1] = 0xEA;
+                file.needsPatch = false; 
+                file.oldBytes = "EA EA";
+                anyPatched = true;
+                zip.file(file.fileObj.name.replace(/\.mc$/i, '_patched.mc'), file.data);
+            }
+        });
+
+        if (anyPatched) {
+            zip.generateAsync({ type: "blob" }).then(function(content) {
+                let url = URL.createObjectURL(content);
+                let a = document.createElement('a');
+                a.href = url; a.download = "VintageGadget_Patched_Set.zip"; a.click();
+                renderLists();
+            });
+        } else {
+            alert("CHOOSE AN ACTIVE ELEMENT TO DISPATCH PROCESSORS.");
+        }
+    }
+</script>
+</body>
+</html>
