@@ -20,11 +20,11 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            align-items: flex-start;
+            align-items: flex-start; /* Changed from center to allow top alignment and natural scrolling */
             min-height: 100vh;
         }
 
-        /* INTRO LAYER: Custom 1980s Hardware BIOS Sequence Overlay */
+        /* INTRO LAYER: Fixed overlay that completely unmounts */
         #fds-bios-screen {
             position: fixed;
             top: 0;
@@ -54,6 +54,7 @@
             66%  { color: #f8b800; }
         }
 
+        /* Banner Container for Centered Alignment */
         .banner-container {
             width: 100%;
             display: flex;
@@ -63,7 +64,7 @@
             position: relative;
         }
 
-        /* Hardware Slide-In and Elastic Jitter Alignment Snap */
+        /* Exact FDS Slide-In and Snap Mechanics */
         .custom-banner {
             font-size: 28px;
             color: #f8b800;
@@ -75,18 +76,17 @@
 
         @keyframes hardwareScroll {
             0%   { transform: translateX(100vw); }
-            70%  { transform: translateX(-30px); } 
-            82%  { transform: translateX(15px); }  
-            92%  { transform: translateX(-5px); }  
-            100% { transform: translateX(0px) translateY(4px); } 
+            70%  { transform: translateX(-30px); } /* Slide past center point */
+            82%  { transform: translateX(15px); }  /* Elastic rebound snap */
+            92%  { transform: translateX(-5px); }  /* Micro stabilization jitter */
+            100% { transform: translateX(0px) translateY(4px); } /* Lock in place & drop 1 scanline */
         }
 
-        /* Pure CSS Mascot Runway Track */
         .sprite-track {
             position: relative;
             width: 100%;
             max-width: 600px;
-            height: 70px;
+            height: 60px;
             border-bottom: 4px dashed #333;
             overflow: hidden;
         }
@@ -94,25 +94,24 @@
         .runner-group {
             position: absolute;
             display: flex;
-            gap: 20px;
+            gap: 25px;
             align-items: flex-end;
-            bottom: 4px;
+            bottom: 0;
             animation: spriteChase 4.5s linear infinite;
         }
 
         @keyframes spriteChase {
-            0%   { left: -160px; }
+            0%   { left: -150px; }
             100% { left: 100%; }
         }
 
-        /* 16x16 Pixel Art Grid Matrix Translators */
         .pixel-sprite {
             display: grid;
-            grid-template-columns: repeat(16, 3px);
+            grid-template-columns: repeat(12, 3px);
             grid-template-rows: repeat(16, 3px);
         }
 
-        /* MAIN APP LAYER: Protected layout boundaries with viewport auto-expand */
+        /* APPLICATION LAYER: Configured for safe page expanding/scrolling */
         .app-hidden {
             display: none !important;
         }
@@ -125,7 +124,7 @@
             max-width: 800px;
             padding: 30px 20px;
             margin-top: 20px;
-            margin-bottom: 50px;
+            margin-bottom: 40px; /* Extends bottom room for long batch files lists */
             animation: crtPowerOn 0.3s ease-out;
         }
 
@@ -227,8 +226,8 @@
 
     <div class="sprite-track">
         <div class="runner-group">
-            <div class="pixel-sprite" id="doctor-sprite"></div>
-            <div class="pixel-sprite" id="card-sprite"></div>
+            <div class="pixel-sprite" id="mario-code"></div>
+            <div class="pixel-sprite" id="luigi-code"></div>
         </div>
     </div>
 </div>
@@ -269,69 +268,26 @@
 </div>
 
 <script>
-    // Color Palette mapping variables for pure code matrix compilation
-    const R = '#D80000'; // System Frame Red
-    const Y = '#F8B800'; // Enclosure Yellow Gold
-    const B = '#0044D8'; // Deep Label Blue
-    const W = '#FFFFFF'; // Bright Uniform White
-    const K = '#000000'; // Diagnostic Shadow Black
-    const S = '#F8D8A0'; // Retro Pale Skin Tone
-    const G = '#7C7C7C'; // Device Plastic Iron Gray
-    const O = 'transparent';
-
-    // 16x16 coordinate map layout array for the Game Doctor Unit
-    const doctorMap = [
-        O,O,O,O,R,R,R,R,R,R,O,O,O,O,O,O,
-        O,O,O,R,R,R,R,R,R,R,R,R,O,O,O,O,
-        O,O,O,G,G,G,S,S,K,S,G,O,O,O,O,O,
-        O,O,G,S,G,S,S,S,K,S,S,S,O,O,O,O,
-        O,O,G,S,G,G,S,S,S,S,G,S,O,O,O,O,
-        O,O,O,G,S,S,S,S,S,G,G,O,O,O,O,O,
-        O,O,O,O,S,S,S,S,S,S,O,O,O,O,O,O,
-        O,O,O,R,R,W,R,R,R,W,R,R,O,O,O,O,
-        O,O,R,R,R,W,W,W,W,W,R,R,R,O,O,O,
-        O,R,R,R,W,K,W,W,W,K,W,R,R,R,O,O,
-        W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,O,
-        W,W,W,W,W,W,W,W,W,W,W,W,W,W,W,O,
-        O,O,W,W,W,W,O,O,O,W,W,W,W,O,O,O,
-        O,O,G,G,G,O,O,O,O,O,G,G,G,O,O,O,
-        O,G,G,G,G,O,O,O,O,O,G,G,G,G,O,O,
-        O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O
+    // Sprite asset map generation
+    const M='red', O='transparent', B='#f8b800', W='white', G='#7c7c7c', L='#00a800';
+    const marioMap = [
+        O,O,O,M,M,M,M,M,O,O,O,O, O,O,M,M,M,M,M,M,M,M,M,O, O,O,G,G,G,B,B,G,B,O,O,O,
+        O,G,B,G,B,B,B,G,B,B,B,O, O,G,B,G,G,B,B,B,G,B,B,B, O,G,G,B,B,B,B,G,G,G,G,O,
+        O,O,O,B,B,B,B,B,B,B,O,O, O,O,M,M,G,M,M,M,G,M,M,O, O,M,M,M,G,M,M,G,M,M,M,O,
+        B,B,M,M,M,M,G,M,M,M,M,B, B,B,B,M,M,M,M,M,M,M,B,B, B,B,M,M,M,M,M,M,M,M,B,B,
+        O,O,M,M,M,O,O,M,M,M,O,O, O,G,G,G,O,O,O,O,G,G,G,O, G,G,G,G,O,O,O,O,G,G,G,G
     ];
+    const luigiMap = marioMap.map(c => c === 'red' ? L : c);
 
-    // 16x16 coordinate map layout array for the Sentient Magic Card Module
-    const cardMap = [
-        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
-        O,Y,Y,B,B,B,B,B,B,B,B,B,B,Y,Y,O,
-        Y,Y,B,B,B,B,B,B,B,B,B,B,B,B,Y,Y,
-        Y,Y,B,W,W,B,B,B,B,W,W,B,B,B,Y,Y,
-        Y,Y,B,W,K,B,B,B,B,W,K,B,B,B,Y,Y,
-        Y,Y,B,B,B,B,B,B,B,B,B,B,B,B,Y,Y,
-        Y,Y,B,B,B,R,R,R,R,R,R,B,B,B,Y,Y,
-        O,Y,Y,B,B,B,B,B,B,B,B,B,B,Y,Y,O,
-        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
-        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
-        O,O,G,G,G,G,G,G,G,G,G,G,G,G,O,O,
-        O,O,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,Y,O,O,
-        O,O,O,Y,Y,Y,O,O,O,O,Y,Y,Y,O,O,O,
-        O,O,O,Y,Y,Y,O,O,O,O,Y,Y,Y,O,O,O,
-        O,O,Y,Y,Y,Y,O,O,O,O,Y,Y,Y,Y,O,O,
-        O,O,O,O,O,O,O,O,O,O,O,O,O,O,O,O
-    ];
-
-    function drawCustomSprite(elementId, colorArray) {
-        let containerHTML = '';
-        colorArray.forEach(pixelColor => {
-            containerHTML += `<div style="background:${pixelColor}"></div>`;
-        });
-        document.getElementById(elementId).innerHTML = containerHTML;
+    function drawSprite(elId, colorMap) {
+        let html = '';
+        colorMap.forEach(color => html += `<div style="background:${color}"></div>`);
+        document.getElementById(elId).innerHTML = html;
     }
-    
-    // Mount the code-compiled matrices into the UI runner nodes
-    drawCustomSprite('doctor-sprite', doctorMap);
-    drawCustomSprite('card-sprite', cardMap);
+    drawSprite('mario-code', marioMap);
+    drawSprite('luigi-code', luigiMap);
 
-    // Boot motor delay timing
+    // Fade timing initialization
     setTimeout(() => {
         let intro = document.getElementById('fds-bios-screen');
         let app = document.getElementById('main-application');
@@ -339,12 +295,12 @@
         document.body.style.backgroundColor = '#fff';
         setTimeout(() => {
             document.body.style.backgroundColor = '#000';
-            intro.remove(); 
+            intro.remove(); // Safely clear overlay out of the DOM footprint entirely
             app.classList.remove('app-hidden');
         }, 60);
     }, 4500);
 
-    // ----- BATCH SYSTEM LOGIC CORE -----
+    // Processing framework
     let loadedFiles = [];
 
     function handleFiles(files) {
