@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sega Dreamcast & Flappy Sanic Engine</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script src="https://unpkg.com/@tonejs/midi"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #111;
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            user-select: none;
+            touch-action: none;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #dreamcastCanvas {
+            z-index: 5;
+            background-color: #ffffff;
+            display: none;
+        }
+        #sanicCanvas {
+            z-index: 1;
+        }
+        
+        /* --- RETRO CONSOLE OVERLAY --- */
+        #power-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, #8B5A2B 0%, #A06D3B 25%, #774315 28%, #A06D3B 30%, #B3804E 70%, #774315 73%, #8B5A2B 75%, #A06D3B 100%);
+            background-size: 120px 100%;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.6);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            transition: opacity 0.5s ease;
+        }
+
+        .dc-console {
+            position: relative;
+            width: 420px;
+            height: 420px;
+            background: #e2e8f0;
+            border-radius: 40px 40px 60px 60px;
+            box-shadow: 
+                0 30px 60px rgba(0,0,0,0.7),
+                inset 0 -15px 20px rgba(0,0,0,0.15),
+                inset 0 10px 10px rgba(255,255,255,0.6);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dc-console::before, .dc-console::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            width: 3px;
+            height: 140px;
+            background: rgba(0,0,0,0.08);
+        }
+        .dc-console::before { left: 45px; transform: rotate(-25deg); transform-origin: top left; }
+        .dc-console::after { right: 45px; transform: rotate(25deg); transform-origin: top right; }
+
+        .dc-lid {
+            position: relative;
+            width: 310px;
+            height: 310px;
+            background: #eef2f6;
+            border-radius: 50%;
+            border: 2px solid rgba(0,0,0,0.06);
+            box-shadow: 
+                0 4px 10px rgba(0,0,0,0.1),
+                inset 0 2px 6px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .dc-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #e2e8f0;
+            padding: 8px 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(0,0,0,0.05);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .dc-swirl-icon {
+            width: 32px;
+            height: 32px;
+            background: radial-gradient(circle, transparent 20%, #ff3a00 21%);
+            border-radius: 50%;
+            position: relative;
+        }
+        .dc-badge span {
+            font-family: "Times New Roman", serif;
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #556270;
+            margin-top: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .dc-triangle-pointer {
+            position: absolute;
+            bottom: -5px;
+            width: 0;
+            height: 0;
+            border-left: 22px solid transparent;
+            border-right: 22px solid transparent;
+            border-top: 30px solid #94a3b8;
+        }
+        .dc-triangle-pointer::after {
+            content: '';
+            position: absolute;
+            top: -30px;
+            left: -11px;
+            width: 0;
+            height: 0;
+            border-left: 11px solid transparent;
+            border-right: 11px solid transparent;
+            border-top: 15px solid #334155;
+        }
+
+        .dc-btn {
+            position: absolute;
+            bottom: 25px;
+            width: 58px;
+            height: 58px;
+            background: #cbd5e1;
+            border-radius: 50%;
+            border: 2px solid #94a3b8;
+            box-shadow: 
+                0 4px 5px rgba(0,0,0,0.2),
+                inset 0 2px 4px rgba(255,255,255,0.5);
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.65rem;
+            font-weight: bold;
+            color: #475569;
+            text-transform: uppercase;
+            font-family: sans-serif;
+            transition: all 0.1s ease;
+        }
+        .dc-btn:active {
+            transform: scale(0.95);
+            box-shadow: 
+                0 1px 2px rgba(0,0,0,0.3),
+                inset 0 3px 5px rgba(0,0,0,0.2);
+        }
+
+        #power-switch { left: 25px; }
+        #open-switch { right: 25px; }
+
+        .dc-power-led {
+            position: absolute;
+            left: 42px;
+            bottom: 92px;
+            width: 14px;
+            height: 10px;
+            background: #64748b;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            transition: background 0.2s ease, box-shadow 0.2s ease;
+        }
+        .dc-power-led.active {
+            background: #ff7b00;
+            box-shadow: 0 0 12px #ff7b00, 0 0 4px #ff3a00;
+        }
+
+        .instruction-tag {
+            margin-top: 30px;
+            background: rgba(0,0,0,0.6);
+            color: #fff;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+
+        /* --- GAME OVERLAY SCREEN --- */
+        #start-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            z-index: 8;
+            text-align: center;
+            padding: 20px;
+            display: none; 
+        }
+        #menu-card {
+            background: rgba(0, 0, 0, 0.78);
+            padding: 40px;
+            border-radius: 15px;
+            border: 4px solid #ffff00;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            max-width: 90%;
+            width: 500px;
+        }
+        #start-overlay h1 {
+            font-size: 3.5rem;
+            color: #ffff00;
+            text-shadow: 6px 6px #ff0000;
+            margin-bottom: 5px;
+        }
+        #start-overlay h2 {
+            font-size: 1.6rem;
+            color: #00ff00;
+            margin-bottom: 25px;
+        }
+        #start-btn {
+            font-size: 1.8rem;
+            background: #ff00ff;
+            color: #fff;
+            padding: 15px 35px;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Comic Sans MS', sans-serif;
+            box-shadow: 0 5px #aa00aa;
+            width: 100%;
+        }
+        #start-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px #aa00aa;
+        }
+        #start-btn:disabled {
+            background: #555;
+            box-shadow: none;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+
+    <input type="hidden" id="music-vol" value="0.5">
+    <input type="hidden" id="sfx-vol" value="1.0">
+
+    <div id="power-overlay">
+        <div class="dc-console">
+            <div class="dc-power-led" id="led-indicator"></div>
+            <div class="dc-btn" id="power-switch" onclick="bootDreamcast()">Power</div>
+            
+            <div class="dc-lid">
+                <div class="dc-badge">
+                    <div class="dc-swirl-icon"></div>
+                    <span>Dreamcast</span>
+                </div>
+                <div class="dc-triangle-pointer"></div>
+            </div>
+
+            <div class="dc-btn" id="open-switch">Open</div>
+        </div>
+        <div class="instruction-tag">Press Power Button to Boot</div>
+    </div>
+
+    <div id="start-overlay">
+        <div id="menu-card">
+            <h1>FLAPPY SANIC</h1>
+            <h2>100% MADE BY GOOGLE GEMINI!!!</h2>
+            <br>
+            <button id="start-btn" onclick="startGame()" disabled>LOADING HARDCODED MIDI...</button>
+        </div>
+    </div>
+
+    <canvas id="dreamcastCanvas"></canvas>
+    <canvas id="sanicCanvas"></canvas>
+
+    <script>
+        // --- BASE64 MIDI DATA PLACEHOLDER ---
+        const base64MidiData = "TVRoZAAAAAYAAQAKAYBNVHJrAAAAIwD/WAQEAmAIAP9/AwAAQQD/fwUAAHcOAAD/UQMFO0kA/y8ATVRyawAABpAA/wMLVGFrZW4gZnJvbToAsAAAAMABALAHZACQUX9cgFEABJBNf1yATQAEkFF/XIBRAASQTX9cgE0ABJBTf1yAUwAEkE9/XIBPAASQU39cgFMABJBPf1yATwAEkFR/XIBUAASQUX9cgFEABJBUf1yAVAAEkFF/XIBRAASQVn9cgFYABJBTf1yAUwAEkFZ/XIBWAASQU39cgFMABJBYf1yAWAAEkFR/XIBUAASQWH9cgFgABJBUf1yAVAAEkFh/XIBYAASQVH9cgFQABJBYf1yAWAAEkFR/XIBUAASQWH9cgFgABJBUf1yAVAAEkFh/XIBYAASQVH9cgFQABJBYf1yAWAAEkFR/XIBUAASQWH9cgFgABJBUf1yAVAAEkFh/XIBYAASQVH9cgFQABJBYf1yAWAAEkFR/XIBUAASQWH9cgFgABJBUf1yAVAAEkFh/XIBYAASQVH9cgFQA1ASQVH+BPIBUAASQUX+CfIBRAASQVH+BPIBUAASQU3+CfIBTAASQVH+BPIBUAASQU3+CfIBTAASQT3+CfIBPAIYEkE9/gTyATwAEkFh/gTyAWAAEkFZ/gnyAVgAEkFR/gTyAVAAEkFN/gnyAUwAEkFR/gTyAVAAEkFN/gnyAUwAEkE9/gnyATwCHRJBUf4E8gFQABJBRf4J8gFEABJBUf4E8gFQABJBTf4J8gFMABJBUf4E8gFQABJBTf4J8gFMABJBPf4J8gE8AhgSQUX+BPIBRAASQUX+BPIBRAASQTX+CfIBNAASQUX+BPIBRAASQT3+CfIBPAASQUX+BPIBRAASQT3+CfIBPAASQSH+CfIBIAIdEkFR/gTyAVAAEkFF/gnyAUQAEkFR/gTyAVAAEkFN/gnyAUwAEkFR/gTyAVAAEkFN/gnyAUwAEkE9/gnyATwCGBJBPf4E8gE8ABJBYf4E8gFgABJBWf4J8gFYABJBUf4E8gFQABJBTf4J8gFMABJBUf4E8gFQABJBTf4J8gFMABJBPf4J8gE8Ah0SQVH+BPIBUAASQUX+CfIBRAASQVH+BPIBUAASQU3+CfIBTAASQVH+BPIBUAASQU3+CfIBTAASQT3+CfIBPAIYEkFF/gTyAUQAEkFF/gTyAUQAEkE1/gnyATQAEkFF/gTyAUQAEkE9/gnyATwAEkFF/gTyAUQAEkE9/gnyATwAEkEh/gTyASAAEkEh/gTyASAAEkEx/gTyATAAEkEp/lHyASgAEkEV/gTyARQAEkEh/gTyASAAEkEx/kzyATAAEkEh/gTyASAAEkEh/gTyASAAEkEx/gTyATAAEkEt/lHyASwAEkEh/gTyASAAEkEt/gTyASwAEkEp/l3yASgCGBJBUf4E8gFQABJBRf4J8gFEABJBUf4E8gFQABJBTf4J8gFMABJBUf4E8gFQABJBTf4J8gFMABJBPf4J8gE8AhgSQT3+BPIBPAASQWH+BPIBYAASQVn+CfIBWAASQVH+BPIBUAASQU3+CfIBTAASQVH+BPIBUAASQU3+CfIBTAASQT3+CfIBPAIdEkFR/gTyAVAAEkFF/gnyAUQAEkFR/gTyAVAAEkFN/gnyAUwAEkFR/gTyAVAAEkFN/gnyAUwAEkE9/gnyATwCGBJBRf4E8gFEABJBRf4E8gFEABJBNf4J8gE0ABJBRf4E8gFEABJBPf4J8gE8ABJBRf4E8gFEABJBPf4J8gE8ABJBIf4J8gEgAh0SQVH+BPIBUAASQUX+CfIBRAASQVH+BPIBUAASQU3+CfIBTAASQVH+BPIBUAASQU3+CfIBTAASQT3+CfIBPAIYEkE9/gTyATwAEkFh/gTyAWAAEkFZ/gnyAVgAEkFR/gTyAVAAEkFN/gnyAUwAEkFR/gTyAVAAEkFN/gnyAUwAEkE9/gnyATwCHRJBUf4E8gFQABJBRf4J8gFEABJBUf4E8gFQABJBTf4J8gFMABJBUf4E8gFQABJBTf4J8gFMABJBPf4J8gE8AhgSQUX+BPIBRAASQUX+BPIBRAASQTX+CfIBNAASQUX+BPIBRAASQT3+CfIBPAASQUX+BPIBRAASQT3+CfIBPAASQSH+BPIBIAASQSH+BPIBIAASQTH+BPIBMAASQSn+UfIBKAASQRX+BPIBFAASQSH+BPIBIAASQTH+TPIBMAASQSH+BPIBIAASQSH+BPIBIAASQTH+BPIBMAASQS3+UfIBLAASQSH+BPIBIAASQS3+BPIBLAASQSn+XfIBKAAD/LwBNVHJrAAAMmwD/Axp3d3cuYWxwaGFsaW5rLmNvbS5hdS9+a29zeQCxAAAAwSYAsQdkgUCRIWCBPIEhAASRLWCBPIEtAASRIWCBPIEhAASRImCBPIEiAASRLmCBPIEuAASRI2CBPIEjAASRL2CBPIEvAASRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRggTyBJAAEkSRgXIEkAGSRIWBcgSEAZJEhYIE8gSEABJEjYFyBIwBkkSNggTyBIwAEkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYIE8gSQABJEmYIE8gSYABJEoYIE8gSgABJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkSRggTyBJAAEkSZggTyBJgAEkShggTyBKAAEkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRJGCBPIEkAASRJmCBPIEmAASRKGCBPIEoAASRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEmYFyBJgBkkSZgXIEmAGSRJmBcgSYAZJEmYFyBJgBkkSZgXIEmAGSRJmBcgSYAZJEmYFyBJgBkkSZgXIEmAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRggTyBJAAEkSZggTyBJgAEkShggTyBKAAEkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRJGCBPIEkAASRJmCBPIEmAASRKGCBPIEoAASRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEkYIE8gSQABJEmYIE8gSYABJEoYIE8gSgABJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkSZgXIEmAGSRJmBcgSYAZJEmYFyBJgBkkSZgXIEmAGSRJmBcgSYAZJEmYFyBJgBkkSZgXIEmAGSRJmBcgSYAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRLmCEPIEuAASRLWCEPIEtAASRK2CEPIErAASRKWCEPIEpAASRKGCCHIEoAGSRKGCCHIEoAGSRIWCEPIEhAASRI2CEPIEjAASRJGCEPIEkAASRJmCEPIEmAASRKGCCHIEoAGSRLWCCHIEtAGSRLGCEPIEsAASRK2CEPIErAASRKWCEPIEpAASRJ2CEPIEnAASRJmCCHIEmAGSRJGCCHIEkAGSRH2CEPIEfAASRJmCEPIEmAASRH2CCfIEfAASRK2CBPIErAASRH2CBPIEfAASRIWCBPIEhAASRI2CBPIEjAASRJGCBPIEkAASRJmCBPIEmAASRKGCBPIEoAASRKWCBPIEpAASRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEkYIE8gSQABJEmYIE8gSYABJEoYIE8gSgABJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkSRggTyBJAAEkSZggTyBJgAEkShggTyBKAAEkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRJmBcgSYAZJEmYFyBJgBkkSZgXIEmAGSRJmBcgSYAZJEmYFyBJgBkkSZgXIEmAGSRJmBcgSYAZJEmYFyBJgBkkSRgXIEkAGSRJGBcgSQAZJEkYFyBJABkkSRgXIEkAGSRJGBcgSQAZJEkYIE8gSQABJEmYIE8gSYABJEoYIE8gSgABJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkSRggTyBJAAEkSZggTyBJgAEkShggTyBKAAEkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEoYFyBKABkkShgXIEoAGSRKGBcgSgAZJEoYFyBKABkkShgXIEoAGSRJGCBPIEkAASRJmCBPIEmAASRKGCBPIEoAASRKWBcgSkAZJEpYFyBKQBkkSlgXIEpAGSRKWBcgSkAZJEpYFyBKQBk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JJNPQIE8g08ABJNRQIE8g1EABJNPQIJ8g08ABJNRQIE8g1EAgUSTWECCfINYAASTWECBPINYAASTWUCBPINZAASTWECBPINYAASTW0CBPINbAASTWECBPINYAASTWECBPINYAASTVECBPINUAAD/LwBNVHJrAAAG5gD/Aw5XaW5KYW1tZXIgRGVtbwCyAAAAwj8Asgdk7ACSQCCCfIJAAASSPCCCfII8AASSOSCCfII5AASSNSCCfII1AASSPiCCfII+AASSOyCCfII7AASSNyCCfII3AASSNCCCfII0AASSQCCCfIJAAASSPCCCfII8AASSOSCCfII5AASSNSCCfII1AASSPiCCfII+AASSOyCCfII7AASSNyCCfII3AASSNCCCfII0AASSQCCCfIJAAASSPCCCfII8AASSOSCCfII5AASSNSCCfII1AASSPiCCfII+AASSOyCCfII7AASSNyCCfII3AASSNCCCfII0AASSPCCCfII8AASSOSCCfII5AASSNSCCfII1AASSMiCCfIIyAASSOyCCfII7AASSNyCCfII3AIYEkkAggTyCQAAEkjwggTyCPACGBJJAIIE8gkAABJI8IIE8gjwABJI+IIE8gj4ABJI7IIE8gjsAiQSSQCCBPIJAAASSPCCBPII8AIYEkkAggTyCQAAEkjwggTyCPAAEkj4ggTyCPgAEkjsggTyCOwCJBJJAIIE8gkAABJI8IIE8gjwAhgSSQCCBPIJAAASSPCCBPII8AASSPiCBPII+AASSOyCBPII7AIkEkjwggTyCPAAEkjkggTyCOQCVBJI+IACSOSCEPII+AACCOQAEkj4gAJI5IIQ8gj4AAII5AASSPiAAkjkghDyCOQAAgj4ABJI+IACSOSCEPII+AACCOQAEkj4gAJI5IIIcgj4AAII5AGSSOSAAkj4gghyCOQAAgj4AZJI8IACSOSCEPII8AACCOQAEkjwgAJI5IIQ8gjwAAII5AASSPCAAkjkghDyCOQAAgjwABJI8IACSOSCEPII8AACCOQAEkjwgAJI5IIIcgjwAAII5AGSSOSAAkjwgghyCOQAAgjwAZJI8IACSNyCEPII8AACCNwAEkjwgAJI3IIQ8gjwAAII3AASSPCAAkjcghDyCNwAAgjwABJI8IACSNyCEPII8AACCNwAEkjwgAJI3IIIcgjwAAII3AGSSNyAAkjwgghyCNwAAgjwAZJJFIACSQSCEPIJFAACCQQAEkkUgAJJBIIQ8gkUAAIJBAASSRSAAkkEghDyCQQAAgkUABJJFIACSQSCEPIJFAACCQQAEkkUgAJJBIIIcgkUAAIJBAGSSQSAAkkUgghyCQQAAgkUAZJJAIIJ8gkAABJI8IIJ8gjwABJI5IIJ8gjkABJI1IIJ8gjUABJI+IIJ8gj4ABJI7IIJ8gjsABJI3IIJ8gjcABJI0IIJ8gjQABJJAIIJ8gkAABJI8IIJ8gjwABJI5IIJ8gjkABJI1IIJ8gjUABJI+IIJ8gj4ABJI7IIJ8gjsABJI3IIJ8gjcABJI0IIJ8gjQABJJAIIJ8gkAABJI8IIJ8gjwABJI5IIJ8gjkABJI1IIJ8gjUABJI+IIJ8gj4ABJI7IIJ8gjsABJI3IIJ8gjcABJI0IIJ8gjQABJI8IIJ8gjwABJI5IIJ8gjkABJI1IIJ8gjUABJIyIIJ8gjIABJI7IIJ8gjsABJI3IIJ8gjcAhgSSQCCBPIJAAASSPCCBPII8AIYEkkAggTyCQAAEkjwggTyCPAAEkj4ggTyCPgAEkjsggTyCOwCJBJJAIIE8gkAABJI8IIE8gjwAhgSSQCCBPIJAAASSPCCBPII8AASSPiCBPII+AASSOyCBPII7AIkEkkAggTyCQAAEkjwggTyCPACGBJJAIIE8gkAABJI8IIE8gjwABJI+IIE8gj4ABJI7IIE8gjsAiQSSPCCBPII8AASSOSCBPII5AJUEkj4gAJI5IIQ8gj4AAII5AASSPiAAkjkghDyCPgAAgjkABJI+IACSOSCEPII5AACCPgAEkj4gAJI5IIQ8gj4AAII5AASSPiAAkjkgghyCPgAAgjkAZJI5IACSPiCCHII5AACCPgBkkjwgAJI5IIQ8gjwAAII5AASSPCAAkjkghDyCPAAAgjkABJI8IACSOSCEPII5AACCPAAEkjwgAJI5IIQ8gjwAAII5AASSPCAAkjkgghyCPAAAgjkAZJI5IACSPCCCHII5AACCPABkkjwgAJI3IIQ8gjwAAII3AASSPCAAkjcghDyCPAAAgjcABJI8IACSNyCEPII3AACCPAAEkjwgAJI3IIQ8gjwAAII3AASSPCAAkjcgghyCPAAAgjcAZJI3IACSPCCCHII3AACCPABkkkUgAJJBIIQ8gkUAAIJBAASSRSAAkkEghDyCRQAAgkEABJJFIACSQSCEPIJBAACCRQAEkkUgAJJBIIQ8gkUAAIJBAASSRSAAkkEgghyCRQAAgkEAZJJBIACSRSCCHIJBAACCRQAA/y8ATVRyawAAAgsA/wMOV2luSmFtbWVyIERlbW8AtAAAAMRRALQHZP9AlFFAgTyEUQAElFRAgTyEVAAElFFAgTyEUQCTRJRRQIE8hFEABJRUQIE8hFQABJRYQIE8hFgAk0SUUUCBPIRRAASUVECBPIRUAASUUUCBPIRRAJBElFRAXIRUAGSUUUCCfIRRAASUUkBchFIAZJRTQFyEUwBklFRAgTyEVACSBJRRQIE8hFEABJRUQIE8hFQABJRRQIE8hFEAk0SUUUCBPIRRAASUVECBPIRUAASUWECBPIRYAJNElFFAgTyEUQAElFRAgTyEVAAElFFAgTyEUQCQRJRUQFyEVABklFFAgnyEUQAElFJAXIRSAGSUU0BchFMA9CSUUUCBPIRRAASUVECBPIRUAASUUUCBPIRRAJNElFFAgTyEUQAElFRAgTyEVAAElFhAgTyEWACTRJRRQIE8hFEABJRUQIE8hFQABJRRQIE8hFEAkESUVEBchFQAZJRRQIJ8hFEABJRSQFyEUgBklFNAXIRTAGSUVECBPIRUAJIElFFAgTyEUQAElFRAgTyEVAAElFFAgTyEUQCTRJRRQIE8hFEABJRUQIE8hFQABJRYQIE8hFgAk0SUUUCBPIRRAASUVECBPIRUAASUUUCBPIRRAJBElFRAXIRUAGSUUUCCfIRRAASUUkBchFIAZJRTQFyEUwAA/y8ATVRyawAAANkA/wMOV2luSmFtbWVyIERlbW8AtQAAAMUyALUHZIHMAJVgQI58hWAABJViQIJ8hWIABJVfQIV8hV8ABJVgQI58hWAABJVfQIJ8hV8ABJVbQIV8hVsABJVgQI58hWAABJViQIJ8hWIABJVfQIV8hV8ABJVgQJd8hWAAgcAElWBAjnyFYAAElWJAgnyFYgAElV9AhXyFXwAElWBAjnyFYAAElV9AgnyFXwAElVtAhXyFWwAElWBAjnyFYAAElWJAgnyFYgAElV9AhXyFXwAElWBAl3yFYAAA/y8ATVRyawAABKEA/wMOV2luSmFtbWVyIERlbW8AtgAAAMYaALYHZO8AlkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkggAJZFIIE8hkgAAIZFAIMElkggAJZFIIJ8hkgAAIZFAIRElkcgAJZDIIE8hkcAAIZDAIMElkcgAJZDIIJ8hkcAAIZDAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkggAJZFIIE8hkgAAIZFAIMElkggAJZFIIJ8hkgAAIZFAIRElkcgAJZDIIE8hkcAAIZDAIMElkcgAJZDIIJ8hkcAAIZDAORElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkggAJZFIIE8hkgAAIZFAIMElkggAJZFIIJ8hkgAAIZFAIRElkcgAJZDIIE8hkcAAIZDAIMElkcgAJZDIIJ8hkcAAIZDAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkwgAJZIIIE8hkwAAIZIAIMElkwgAJZIIIJ8hkwAAIZIAIRElkogAJZHIIE8hkoAAIZHAIMElkogAJZHIIJ8hkoAAIZHAIRElkggAJZFIIE8hkgAAIZFAIMElkggAJZFIIJ8hkgAAIZFAIRElkcgAJZDIIE8hkcAAIZDAIMElkcgAJZDIIJ8hkcAAIZDAAD/LwBNVHJrAAALSgD/Aw5XaW5KYW1tZXIgRGVtbwC5B2SBQJkjf4E8iSMABJkmf4E8iSYABJkjf4E8iSMABJkjf4E8iSMABJkmf4E8iSYABJkjf4E8iSMABJkmf4E8iSYABJkjfwCZMX+BPIkjAIFAiTEABJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZJn+BPIkmAASZJn+BPIkmAASZJn+BPIkmAASZI38AmTF/gTyJIwCBQIkxAASZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSZ/gTyJJgAEmSZ/gTyJJgAEmSZ/gTyJJgAEmSN/AJkxf4E8iSMAgUCJMQAEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkmf4E8iSYABJkmf4E8iSYABJkmf4E8iSYABJkjfwCZMX+BPIkjAIFAiTEABJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZJn+BPIkmAASZJn+BPIkmAASZJn+BPIkmAASZI38AmTF/gTyJIwCBQIkxAASZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSN/gTyJIwAEmSZ/gTyJJgCBRJkjf4E8iSMAgUSZJn+BPIkmAASZI3+BPIkjAIFEmSZ/gTyJJgAEmSZ/gTyJJgAEmSZ/gTyJJgAEmSN/AJkxf4E8iSMAgUCJMQAEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkjf4E8iSMABJkmf4E8iSYAgUSZI3+BPIkjAIFEmSZ/gTyJJgAEmSN/gTyJIwCBRJkmf4E8iSYABJkmf4E8iSYABJkmf4E8iSYABJkjfwCZMX+BPIkjAIFAiTEABJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZI3+BPIkjAASZJn+BPIkmAIFEmSN/gTyJIwCBRJkmf4E8iSYABJkjf4E8iSMAgUSZJn+BPIkmAASZJn+BPIkmAASZJn+BPIkmAAD/LwA=";
+
+        const dcCanvas = document.getElementById('dreamcastCanvas');
+        const dcCtx = dcCanvas.getContext('2d');
+        const sanicCanvas = document.getElementById('sanicCanvas');
+        const sanicCtx = sanicCanvas.getContext('2d');
+
+        let gameState = "START"; 
+        let bootStartTime = 0;
+        let gameStartTime = 0;
+        let globalElapsed = 0;
+        let score = 0;
+        let highScore = 0;
+        let isBooting = false;
+
+        let sanicY = 0;
+        let sanicVelocity = 0;
+        const gravity = 0.35; 
+        const jumpStrength = -7.0;
+        let groundY = 0;
+
+        let pipes = [];
+        let trees = [];
+        let bgOffset = 0;
+        const pipeSpeed = 4.5;
+
+        let midiData = null;
+        let synthParts = [];
+        let activeSynths = [];
+        let musicVolumeFactor = 0.5;
+        let sfxVolumeFactor = 1.0;
+
+        // --- GLOBAL SOUND EFFECTS ENGINE (PREVENTS MUTING) ---
+        const sfxSynth = new Tone.Synth({
+            oscillator: { type: "square" },
+            envelope: {
+                attack: 0.01,
+                decay: 0.1,
+                sustain: 0,
+                release: 0.1
+            }
+        }).toDestination();
+
+        function resizeLayout() {
+            dcCanvas.width = window.innerWidth;
+            dcCanvas.height = window.innerHeight;
+            sanicCanvas.width = window.innerWidth;
+            sanicCanvas.height = window.innerHeight;
+            groundY = sanicCanvas.height * 0.75;
+            if (gameState === "START") {
+                sanicY = groundY / 2;
+            }
+        }
+        window.addEventListener('resize', resizeLayout);
+        resizeLayout();
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const musicInput = document.getElementById('music-vol');
+            const sfxInput = document.getElementById('sfx-vol');
+            if(musicInput) musicVolumeFactor = parseFloat(musicInput.value) || 0.5;
+            if(sfxInput) {
+                sfxVolumeFactor = parseFloat(sfxInput.value) || 1.0;
+                sfxSynth.volume.value = Tone.gainToDb(sfxVolumeFactor);
+            }
+
+            try {
+                if (base64MidiData !== "YOUR_BASE64_MIDI_STRING_HERE" && base64MidiData) {
+                    const arrayBuffer = base64ToArrayBuffer(base64MidiData);
+                    midiData = new Midi(arrayBuffer);
+                    const btn = document.getElementById('start-btn');
+                    btn.innerText = "START GAME (LET'S GO FAST)";
+                    btn.disabled = false;
+                } else {
+                    document.getElementById('start-btn').innerText = "ERROR: PASTE BASE64 STRING IN CODE";
+                }
+            } catch (err) {
+                console.error(err);
+                document.getElementById('start-btn').innerText = "ERROR PARSING MIDI DATA";
+            }
+            
+            for(let i = 0; i < 20; i++) {
+                trees.push({ x: i * 250 + Math.random() * 100, scale: 0.9 + Math.random() * 0.5 });
+            }
+            
+            gameStartTime = performance.now();
+            animateGameLoop(gameStartTime);
+        });
+
+        // --- SECTION 1: SEGA DREAMCAST STARTUP RUNTIME ---
+        async function bootDreamcast() {
+            if (isBooting) return;
+            isBooting = true;
+
+            document.getElementById('led-indicator').classList.add('active');
+            await Tone.start();
+
+            const clickSynth = new Tone.NoiseSynth({
+                noise: { type: "pink" },
+                envelope: { attack: 0.002, decay: 0.03, sustain: 0 }
+            }).toDestination();
+            clickSynth.volume.value = Tone.gainToDb(sfxVolumeFactor);
+            clickSynth.triggerAttack();
+
+            setTimeout(() => {
+                dcCanvas.style.display = 'block';
+                document.getElementById('power-overlay').style.opacity = '0';
+                
+                setTimeout(() => {
+                    document.getElementById('power-overlay').style.display = 'none';
+                }, 500);
+
+                playDreamcastAudio();
+                bootStartTime = performance.now();
+                animateBootSequence(bootStartTime);
+            }, 250);
+        }
+
+        function playDreamcastAudio() {
+            const now = Tone.now();
+            const bounceTimes = [0.2, 0.55, 0.85, 1.1, 1.3]; 
+            const bouncePitches = [523.25, 587.33, 659.25, 783.99, 880.00];
+
+            bounceTimes.forEach((timeOffset, i) => {
+                const synth = new Tone.Synth({
+                    oscillator: { type: "sine" },
+                    envelope: { attack: 0.005, decay: 0.15, sustain: 0, release: 0.1 }
+                }).toDestination();
+                
+                synth.volume.value = Tone.gainToDb(sfxVolumeFactor) - 6;
+                synth.triggerAttackRelease(bouncePitches[i], "0.1", now + timeOffset);
+            });
+
+            const padStart = 1.4;
+            const chordFreqs = [196.00, 293.66, 392.00, 493.88, 587.33, 783.99];
+
+            chordFreqs.forEach((freq, idx) => {
+                const padSynth = new Tone.Synth({
+                    oscillator: { type: idx % 2 === 0 ? 'triangle' : 'sine' },
+                    envelope: { attack: 0.8, decay: 1.5, sustain: 0.5, release: 1.5 }
+                }).toDestination();
+
+                padSynth.volume.value = Tone.gainToDb(musicVolumeFactor) - 18;
+                padSynth.triggerAttackRelease(freq, "3.0", now + padStart);
+            });
+        }
+
+        function drawSegaLicenseScreen() {
+            const W = dcCanvas.width;
+            const H = dcCanvas.height;
+            dcCtx.fillStyle = '#b0b5b8'; 
+            dcCtx.fillRect(0, 0, W, H);
+
+            const cx = W / 2;
+            const cy = H / 2;
+            const sizeScale = Math.min(W, H) / 600;
+
+            dcCtx.save();
+            dcCtx.font = `italic bold ${Math.round(72 * sizeScale)}px sans-serif`;
+            dcCtx.strokeStyle = '#0060a8';
+            dcCtx.lineWidth = 6 * sizeScale;
+            dcCtx.textAlign = 'right';
+            dcCtx.strokeText('VGHK', cx - (20 * sizeScale), cy + (20 * sizeScale));
+            
+            dcCtx.strokeStyle = '#b0b5b8';
+            dcCtx.lineWidth = 2 * sizeScale;
+            dcCtx.strokeText('VGHK', cx - (20 * sizeScale), cy + (20 * sizeScale));
+            dcCtx.restore();
+
+            dcCtx.save();
+            dcCtx.fillStyle = '#000000';
+            dcCtx.font = `bold ${Math.round(15 * sizeScale)}px monospace`;
+            dcCtx.textAlign = 'left';
+            dcCtx.fillText('PRODUCED BY OR', cx + (15 * sizeScale), cy - (15 * sizeScale));
+            dcCtx.fillText('UNDER LICENSE FROM', cx + (15 * sizeScale), cy + (5 * sizeScale));
+            dcCtx.fillText('VGHK ENTERPRISES, LTD.', cx + (15 * sizeScale), cy + (25 * sizeScale));
+            dcCtx.restore();
+        }
+
+        function animateBootSequence(currentTime) {
+            const elapsed = (currentTime - bootStartTime) / 1000;
+            const W = dcCanvas.width;
+            const H = dcCanvas.height;
+            const sizeScale = Math.min(W, H) / 600;
+
+            if (elapsed < 4.5) {
+                dcCtx.fillStyle = '#ffffff';
+                dcCtx.fillRect(0, 0, W, H);
+
+                const center = { x: W / 2, y: H / 2 - (50 * sizeScale) };
+                const orangeColor = '#ff3a00';
+
+                if (elapsed < 1.4) {
+                    let ballX = center.x;
+                    let ballY = 0;
+
+                    if (elapsed < 0.2) {
+                        ballY = (elapsed / 0.2) * center.y;
+                    } else if (elapsed < 0.55) {
+                        let t = (elapsed - 0.2) / 0.35;
+                        ballY = center.y - Math.sin(t * Math.PI) * (150 * sizeScale);
+                    } else if (elapsed < 0.85) {
+                        let t = (elapsed - 0.55) / 0.3;
+                        ballY = center.y - Math.sin(t * Math.PI) * (80 * sizeScale);
+                    } else if (elapsed < 1.1) {
+                        let t = (elapsed - 0.85) / 0.25;
+                        ballY = center.y - Math.sin(t * Math.PI) * (35 * sizeScale);
+                    } else {
+                        ballY = center.y;
+                    }
+
+                    dcCtx.beginPath();
+                    dcCtx.arc(ballX, ballY, 14 * sizeScale, 0, Math.PI * 2);
+                    dcCtx.fillStyle = orangeColor;
+                    dcCtx.fill();
+                }
+
+                if (elapsed >= 1.4) {
+                    let drawProgress = (elapsed - 1.4) / 1.2; 
+                    if (drawProgress > 1) drawProgress = 1;
+
+                    dcCtx.save();
+                    dcCtx.strokeStyle = orangeColor;
+                    dcCtx.lineWidth = 18 * sizeScale;
+                    dcCtx.lineCap = 'round';
+                    dcCtx.lineJoin = 'round';
+                    dcCtx.beginPath();
+
+                    const totalTurns = 2.6 * Math.PI * 2; 
+                    const currentMaxTheta = drawProgress * totalTurns;
+
+                    for (let theta = 0.1; theta <= currentMaxTheta; theta += 0.03) {
+                        const radius = 7.0 * theta * sizeScale; 
+                        const sx = center.x + radius * Math.cos(theta + 2.65);
+                        const sy = center.y + radius * Math.sin(theta + 2.65);
+
+                        if (theta === 0.1) dcCtx.moveTo(sx, sy);
+                        else dcCtx.lineTo(sx, sy);
+                    }
+                    dcCtx.stroke();
+                    dcCtx.restore();
+                }
+
+                if (elapsed >= 2.4) {
+                    let textAlpha = (elapsed - 2.4) / 0.8;
+                    if (textAlpha > 1) textAlpha = 1;
+
+                    dcCtx.save();
+                    dcCtx.globalAlpha = textAlpha;
+                    dcCtx.fillStyle = '#111111';
+                    dcCtx.textAlign = 'center';
+                    dcCtx.font = `${Math.round(68 * sizeScale)}px "Times New Roman", Georgia, serif`;
+                    dcCtx.fillText('Dreamcast', center.x, center.y + (200 * sizeScale));
+                    dcCtx.restore();
+                }
+                requestAnimationFrame(animateBootSequence);
+            } 
+            else if (elapsed < 7.5) {
+                drawSegaLicenseScreen();
+                requestAnimationFrame(animateBootSequence);
+            }
+            else {
+                dcCanvas.style.display = 'none';
+                document.getElementById('start-overlay').style.display = 'flex';
+            }
+        }
+
+
+        // --- SECTION 2: FLAPPY SANIC GAME ENGINE RUNTIME ---
+        function handleAction() {
+            if (gameState === "PLAYING") {
+                sanicVelocity = jumpStrength;
+                playJumpSFX();
+            } else if (gameState === "GAMEOVER") {
+                resetGame();
+            }
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                handleAction();
+            }
+        });
+        window.addEventListener('touchstart', (e) => {
+            if (gameState !== "START") {
+                e.preventDefault();
+                handleAction();
+            }
+        }, { passive: false });
+        window.addEventListener('mousedown', (e) => {
+            if (gameState !== "START") {
+                handleAction();
+            }
+        });
+
+        function resetGame() {
+            score = 0;
+            pipes = [];
+            sanicY = groundY / 2;
+            sanicVelocity = 0;
+            bgOffset = 0;
+            gameState = "PLAYING";
+            
+            Tone.Transport.stop();
+            Tone.Transport.position = 0;
+            Tone.Transport.start();
+
+            spawnPipe(sanicCanvas.width + 300);
+            spawnPipe(sanicCanvas.width + 650);
+            spawnPipe(sanicCanvas.width + 1000);
+        }
+
+        async function startGame() {
+            document.getElementById('start-overlay').style.display = 'none';
+            if (Tone.context.state !== 'running') {
+                await Tone.start();
+            }
+
+            if (midiData) {
+                synthParts.forEach(part => part.dispose());
+                activeSynths.forEach(synth => synth.dispose());
+                synthParts = [];
+                activeSynths = [];
+
+                midiData.tracks.forEach(track => {
+                    const synth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.01, decay: 0.15, sustain: 0.4, release: 0.1 }
+                    }).toDestination();
+                    
+                    // Headroom buffer to keep track mixes stable
+                    synth.volume.value = -18; 
+                    activeSynths.push(synth);
+
+                    const part = new Tone.Part((time, note) => {
+                        synth.triggerAttackRelease(note.name, note.duration, time, note.velocity);
+                    }, track.notes).start(0);
+
+                    part.loop = true;
+                    part.loopEnd = midiData.duration;
+                    synthParts.push(part);
+                });
+            }
+
+            resizeLayout();
+            resetGame();
+        }
+
+        // --- STABILIZED COMPACT RETRO RUNTIME AUDIO INTERFACE ---
+        function playJumpSFX() {
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            const now = Tone.now();
+            sfxSynth.triggerAttackRelease("C4", "8n", now);
+            sfxSynth.triggerAttackRelease("E4", "8n", now + 0.05);
+        }
+
+        function playScoreSFX() {
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            const now = Tone.now();
+            sfxSynth.triggerAttackRelease("G5", "16n", now);
+            sfxSynth.triggerAttackRelease("C6", "8n", now + 0.08);
+        }
+
+        function playGameOverSFX() {
+            if (Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            const now = Tone.now();
+            sfxSynth.triggerAttackRelease("B3", "8n", now);
+            sfxSynth.triggerAttackRelease("F3", "4n", now + 0.1);
+        }
+
+        function spawnPipe(startX) {
+            const gap = 245; 
+            const minHeight = 60;
+            const maxHeight = groundY - gap - 60;
+            const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
+            
+            pipes.push({
+                x: startX,
+                width: 85,
+                top: topHeight,
+                bottom: groundY - (topHeight + gap),
+                passed: false
+            });
+        }
+
+        function drawTree(ctx, x, y, scale) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.scale(scale, scale);
+            ctx.fillStyle = '#aa5500';
+            ctx.fillRect(-6, -60, 12, 60);
+            ctx.fillStyle = '#00aa00';
+            ctx.beginPath();
+            ctx.arc(-20, -60, 20, 0, Math.PI, true);
+            ctx.arc(20, -60, 20, 0, Math.PI, true);
+            ctx.arc(0, -75, 25, 0, Math.PI, true);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        function triggerGameOver() {
+            gameState = "GAMEOVER";
+            Tone.Transport.stop();
+            playGameOverSFX();
+        }
+
+        function animateGameLoop(currentTime) {
+            globalElapsed = (currentTime - gameStartTime) / 1000;
+            const W = sanicCanvas.width;
+            const H = sanicCanvas.height;
+
+            if (gameState === "PLAYING" || gameState === "START") {
+                bgOffset += pipeSpeed;
+            }
+
+            if (gameState === "PLAYING") {
+                sanicVelocity += gravity;
+                sanicY += sanicVelocity;
+
+                if (sanicY - 30 < 0 || sanicY + 45 > groundY) {
+                    triggerGameOver();
+                }
+
+                pipes.forEach(pipe => {
+                    pipe.x -= pipeSpeed;
+
+                    const sanicLeft = W / 4 - 25;
+                    const sanicRight = W / 4 + 25;
+                    const sanicTop = sanicY - 25;
+                    const sanicBottom = sanicY + 25;
+
+                    if (pipe.x < sanicRight && pipe.x + pipe.width > sanicLeft) {
+                        if (sanicTop < pipe.top || sanicBottom > groundY - pipe.bottom) {
+                            triggerGameOver();
+                        }
+                    }
+
+                    if (gameState === "PLAYING" && !pipe.passed && pipe.x + pipe.width < sanicLeft) {
+                        pipe.passed = true;
+                        score++;
+                        playScoreSFX();
+                        if (score > highScore) highScore = score;
+                    }
+                });
+
+                if (pipes.length > 0 && pipes[0].x < -100) {
+                    pipes.shift();
+                    const lastPipeX = pipes[pipes.length - 1].x;
+                    spawnPipe(lastPipeX + 380);
+                }
+            }
+
+            sanicCtx.fillStyle = '#4fc3f7';
+            sanicCtx.fillRect(0, 0, W, H);
+
+            trees.forEach(tree => {
+                let currentX = (tree.x - bgOffset * 0.5) % (W + 200);
+                if (currentX < -100) currentX += (W + 200);
+                drawTree(sanicCtx, currentX, groundY, tree.scale);
+            });
+
+            pipes.forEach(pipe => {
+                sanicCtx.fillStyle = '#32cd32';
+                sanicCtx.strokeStyle = '#000000';
+                sanicCtx.lineWidth = 4;
+
+                sanicCtx.fillRect(pipe.x, 0, pipe.width, pipe.top);
+                sanicCtx.strokeRect(pipe.x, -10, pipe.width, pipe.top + 10);
+                sanicCtx.fillStyle = '#228b22'; 
+                sanicCtx.fillRect(pipe.x - 4, pipe.top - 20, pipe.width + 8, 20);
+                sanicCtx.strokeRect(pipe.x - 4, pipe.top - 20, pipe.width + 8, 20);
+
+                sanicCtx.fillRect(pipe.x, groundY - pipe.bottom, pipe.width, pipe.bottom);
+                sanicCtx.strokeRect(pipe.x, groundY - pipe.bottom, pipe.width, pipe.bottom + 10);
+                sanicCtx.fillStyle = '#228b22';
+                sanicCtx.fillRect(pipe.x - 4, groundY - pipe.bottom, pipe.width + 8, 20);
+                sanicCtx.strokeRect(pipe.x - 4, groundY - pipe.bottom, pipe.width + 8, 20);
+            });
+
+            sanicCtx.fillStyle = '#2e7d32';
+            sanicCtx.fillRect(0, groundY, W, 25);
+            
+            const checkerWidth = 30;
+            sanicCtx.fillStyle = '#e57373';
+            sanicCtx.fillRect(0, groundY + 25, W, H - (groundY + 25));
+            sanicCtx.fillStyle = '#795548';
+            const startXOffset = -(bgOffset % (checkerWidth * 2));
+            for (let x = startXOffset; x < W + checkerWidth * 2; x += checkerWidth) {
+                for (let y = groundY + 25; y < H; y += checkerWidth) {
+                    if ((Math.floor((x + bgOffset) / checkerWidth) + Math.floor(y / checkerWidth)) % 2 === 0) {
+                        sanicCtx.fillRect(x, y, checkerWidth, checkerWidth);
+                    }
+                }
+            }
+
+            if (gameState === "START") {
+                sanicY = (groundY / 2) + Math.sin(globalElapsed * 5) * 30;
+            }
+
+            const sx = W / 4 - 40;
+            const sy = sanicY - 45;
+
+            sanicCtx.save();
+            sanicCtx.strokeStyle = '#0000ff';
+            sanicCtx.lineWidth = 12;
+            let legRadiusX = 35 + Math.sin(globalElapsed * 50) * 8;
+            let legRadiusY = 20 + Math.cos(globalElapsed * 50) * 4;
+            
+            sanicCtx.save();
+            sanicCtx.translate(sx + 40, sy + 90);
+            sanicCtx.rotate(globalElapsed * -50);
+            sanicCtx.beginPath();
+            sanicCtx.ellipse(0, 0, legRadiusX, legRadiusY, 0, 0, Math.PI * 2);
+            sanicCtx.stroke();
+            sanicCtx.fillStyle = '#ff0000';
+            sanicCtx.fillRect(legRadiusX - 8, -4, 20, 12);
+            sanicCtx.restore();
+
+            sanicCtx.fillStyle = '#0000ff';
+            sanicCtx.beginPath(); sanicCtx.arc(sx + 40, sy + 50, 42, 0, Math.PI * 2); sanicCtx.fill();
+            sanicCtx.lineWidth = 4; sanicCtx.strokeStyle = '#000000'; sanicCtx.stroke();
+
+            sanicCtx.fillStyle = '#ffe0b2';
+            sanicCtx.beginPath(); sanicCtx.arc(sx + 44, sy + 54, 20, 0, Math.PI * 2); sanicCtx.fill(); sanicCtx.stroke();
+
+            sanicCtx.fillStyle = '#0000ff';
+            for(let i = 0; i < 4; i++) {
+                sanicCtx.beginPath();
+                sanicCtx.moveTo(sx - 2, sy + 15 + (i * 20));
+                sanicCtx.lineTo(sx - 45, sy + i * 14);
+                sanicCtx.lineTo(sx + 5, sy + 35 + (i * 14));
+                sanicCtx.closePath(); sanicCtx.fill(); sanicCtx.stroke();
+            }
+
+            sanicCtx.fillStyle = '#ffffff';
+            sanicCtx.beginPath(); sanicCtx.ellipse(sx + 44, sy + 15, 12, 9, 0, 0, Math.PI * 2); sanicCtx.fill(); sanicCtx.stroke();
+            sanicCtx.beginPath(); sanicCtx.ellipse(sx + 70, sy + 17, 12, 9, 0, 0, Math.PI * 2); sanicCtx.fill(); sanicCtx.stroke();
+            sanicCtx.fillStyle = '#000000';
+            sanicCtx.fillRect(sx + 42 + Math.sin(globalElapsed * 8) * 3, sy + 13, 4, 4);
+            sanicCtx.fillRect(sx + 70, sy + 14 + Math.cos(globalElapsed * 8) * 2, 4, 4);
+
+            sanicCtx.fillStyle = '#ffe0b2';
+            sanicCtx.beginPath(); sanicCtx.ellipse(sx + 60, sy + 34, 18, 10, 0, 0, Math.PI * 2); sanicCtx.fill(); sanicCtx.stroke();
+            sanicCtx.beginPath(); sanicCtx.moveTo(sx + 48, sy + 34); sanicCtx.lineTo(sx + 70, sy + 33); sanicCtx.stroke();
+
+            sanicCtx.strokeStyle = '#0000ff';
+            sanicCtx.lineWidth = 9;
+            let flapMotion = Math.sin(globalElapsed * 40) * 25;
+            if (gameState === "GAMEOVER") flapMotion = 30; 
+
+            sanicCtx.beginPath();
+            sanicCtx.moveTo(sx + 65, sy + 50);
+            sanicCtx.lineTo(sx + 110, sy + 30 + flapMotion);
+            sanicCtx.stroke();
+
+            sanicCtx.fillStyle = '#ffffff';
+            sanicCtx.beginPath(); 
+            sanicCtx.arc(sx + 112, sy + 30 + flapMotion, 11, 0, Math.PI * 2);
+            sanicCtx.fill(); 
+            sanicCtx.stroke();
+            sanicCtx.restore();
+
+            sanicCtx.fillStyle = '#ffffff';
+            sanicCtx.strokeStyle = '#000000';
+            sanicCtx.lineWidth = 6;
+            sanicCtx.textAlign = 'center';
+
+            if (gameState === "PLAYING") {
+                sanicCtx.font = 'bold 32px "Comic Sans MS"';
+                sanicCtx.strokeText(`SCORE: ${score}`, W / 2, 60);
+                sanicCtx.fillText(`SCORE: ${score}`, W / 2, 60);
+            } else if (gameState === "GAMEOVER") {
+                sanicCtx.font = 'bold 44px "Comic Sans MS"';
+                sanicCtx.strokeText('UR RLY BAD !!', W / 2, H / 3);
+                sanicCtx.fillText('UR RLY BAD !!', W / 2, H / 3);
+                
+                sanicCtx.font = 'bold 24px "Comic Sans MS"';
+                sanicCtx.strokeText(`FINAL SCORE: ${score}`, W / 2, H / 3 + 60);
+                sanicCtx.fillText(`FINAL SCORE: ${score}`, W / 2, H / 3 + 60);
+                sanicCtx.strokeText(`BEST SCORE: ${highScore}`, W / 2, H / 3 + 100);
+                sanicCtx.fillText(`BEST SCORE: ${highScore}`, W / 2, H / 3 + 100);
+
+                sanicCtx.fillStyle = '#ffff00';
+                sanicCtx.font = 'bold 28px "Comic Sans MS"';
+                sanicCtx.strokeText('CLICK/TAP ANYWHERE TO RETRY', W / 2, H / 3 + 170);
+                sanicCtx.fillText('CLICK/TAP ANYWHERE TO RETRY', W / 2, H / 3 + 170);
+            }
+
+            requestAnimationFrame(animateGameLoop);
+        }
+    </script>
+</body>
+</html>
