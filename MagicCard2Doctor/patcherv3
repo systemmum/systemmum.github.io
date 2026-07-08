@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Card $7xxx Latch Surgical Scanner</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: #151f32;
+            --border-color: #243552;
+            --text-main: #f1f5f9;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-amber: #f59e0b;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+        }
+
+        body {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 30px 15px;
+            line-height: 1.4;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border-color);
+            background: #0f172a;
+            padding: 40px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--accent-blue);
+            background: #131e35;
+        }
+
+        .hidden-input { display: none; }
+
+        .panel {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 1rem;
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--accent-blue);
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 4px;
+            background: #1e293b;
+            color: var(--text-main);
+        }
+
+        .badge.alert { background: #78350f; color: var(--accent-amber); }
+        .badge.success { background: #064e3b; color: var(--accent-green); }
+        .badge.info { background: #1e3a8a; color: #93c5fd; }
+
+        .btn {
+            background-color: var(--accent-green);
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-family: inherit;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            font-size: 0.9rem;
+        }
+
+        .btn:hover { background-color: #059669; }
+        .btn:disabled { background-color: #334155; color: #64748b; cursor: not-allowed; }
+
+        /* Scanner Table */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+
+        .results-table th {
+            text-align: left;
+            background: #0f172a;
+            color: var(--text-muted);
+            padding: 10px;
+            border-bottom: 2px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        .results-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid var(--border-color);
+            vertical-align: middle;
+        }
+
+        .results-table tr:hover {
+            background: #1e293b50;
+        }
+
+        .hex-code {
+            color: var(--accent-amber);
+            font-weight: bold;
+        }
+
+        .asm-code {
+            color: #a78bfa;
+            font-weight: bold;
+        }
+
+        /* Context Bytes styling */
+        .context-hex {
+            display: flex;
+            gap: 4px;
+            font-family: monospace;
+            background: #090d16;
+            padding: 6px 10px;
+            border-radius: 4px;
+            border: 1px solid #1e2d4a;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+
+        .context-byte {
+            color: #475569;
+        }
+
+        .context-byte.target {
+            color: var(--accent-red);
+            font-weight: bold;
+            background: #450a0a;
+            padding: 0 2px;
+            border-radius: 2px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .custom-checkbox {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--accent-green);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .highlight { color: #fff; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>Magic Card Latch Surgical Scanner & Patcher</h1>
+    <div class="subtitle">Scans binary stream for 6502 absolute stores targeting the $7000 - $7FFF hardware space (8D ?? 7?)</div>
+    
+    <div class="drop-zone" id="dropZone">
+        <p>📥 Drag & Drop your Magic Card dump (.bin / .fds / .MC) here to scan</p>
+        <input type="file" id="fileInput" class="hidden-input">
+    </div>
+
+    <div class="panel" id="statusPanel" style="display: none;">
+        <div class="panel-title">
+            <span>Scan Diagnostics</span>
+            <span id="resultsCountBadge" class="badge">Awaiting Scan...</span>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; font-size: 0.9rem;">
+            <div>Filename: <span id="txtFilename" class="highlight">-</span></div>
+            <div>Size: <span id="txtFilesize" class="highlight">-</span></div>
+            <div>First Byte (Header): <span id="txtHeader" class="highlight">-</span></div>
+        </div>
+    </div>
+
+    <div class="panel" id="resultsPanel" style="display: none;">
+        <div class="panel-title">
+            <span>Located Opcodes (8D ?? 7?)</span>
+            <button class="btn" id="exportBtn" disabled>Patch Selected & Export</button>
+        </div>
+        
+        <div id="tableContainer">
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50px; text-align: center;">Patch?</th>
+                        <th style="width: 120px;">Offset (Hex)</th>
+                        <th style="width: 100px;">Raw Hex</th>
+                        <th style="width: 150px;">Disassembly</th>
+                        <th>Context (-5 bytes / TARGET / +5 bytes)</th>
+                    </tr>
+                </thead>
+                <tbody id="resultsTableBody">
+                    <!-- Dynamic entries will be placed here -->
+                </tbody>
+            </table>
+        </div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            No absolute stores matching "8D ?? 7?" found in this file.
+        </div>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const statusPanel = document.getElementById('statusPanel');
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resultsCountBadge = document.getElementById('resultsCountBadge');
+        const txtFilename = document.getElementById('txtFilename');
+        const txtFilesize = document.getElementById('txtFilesize');
+        const txtHeader = document.getElementById('txtHeader');
+        const resultsTableBody = document.getElementById('resultsTableBody');
+        const emptyState = document.getElementById('emptyState');
+        const exportBtn = document.getElementById('exportBtn');
+
+        let fileData = null;
+        let originalName = "";
+        let detectedMatches = [];
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.borderColor = 'var(--accent-blue)'; });
+        dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = 'var(--border-color)');
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = 'var(--border-color)';
+            if(e.dataTransfer.files.length) processIncomingFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', (e) => {
+            if(e.target.files.length) processIncomingFile(e.target.files[0]);
+        });
+
+        function processIncomingFile(file) {
+            originalName = file.name;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                fileData = new Uint8Array(e.target.result);
+                runSurgicalScan();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function runSurgicalScan() {
+            // UI Diagnostics update
+            statusPanel.style.display = 'block';
+            resultsPanel.style.display = 'block';
+            resultsTableBody.innerHTML = "";
+            detectedMatches = [];
+
+            txtFilename.textContent = originalName;
+            txtFilesize.textContent = fileData.length.toLocaleString() + " bytes";
+            txtHeader.textContent = "$" + fileData[0].toString(16).toUpperCase().padStart(2, '0');
+
+            // Sequential scanning for STA Absolute (0x8D) targeting $7000 - $7FFF (highByte is 0x70 to 0x7F)
+            for (let i = 0; i < fileData.length - 2; i++) {
+                if (fileData[i] === 0x8D) {
+                    const lowByte = fileData[i + 1];
+                    const highByte = fileData[i + 2];
+
+                    // Check if high byte is in the 0x70 - 0x7F range
+                    if ((highByte & 0xF0) === 0x70) {
+                        detectedMatches.push({
+                            offset: i,
+                            lowByte: lowByte,
+                            highByte: highByte
+                        });
+                    }
+                }
+            }
+
+            // Update badge status
+            if (detectedMatches.length > 0) {
+                resultsCountBadge.textContent = `${detectedMatches.length} Match(es) Located`;
+                resultsCountBadge.className = "badge alert";
+                emptyState.style.display = 'none';
+                exportBtn.disabled = false;
+                buildResultsTable();
+            } else {
+                resultsCountBadge.textContent = "0 Matches Found";
+                resultsCountBadge.className = "badge success";
+                emptyState.style.display = 'block';
+                exportBtn.disabled = true;
+            }
+        }
+
+        function buildResultsTable() {
+            detectedMatches.forEach((match, index) => {
+                const tr = document.createElement('tr');
+                
+                // Checkbox Column
+                const tdCheck = document.createElement('td');
+                tdCheck.className = "checkbox-container";
+                const checkbox = document.createElement('input');
+                checkbox.type = "checkbox";
+                checkbox.className = "custom-checkbox";
+                checkbox.dataset.index = index;
+                checkbox.dataset.offset = match.offset;
+                
+                // Auto-check recommendation heuristics (e.g., if target is $7012, $7015, $71CA, $71D2, or lowByte < 0x80)
+                const targetAddressHex = ((match.highByte << 8) | match.lowByte).toString(16).toUpperCase();
+                const recommendedLatches = ["7012", "7015", "704F", "707C", "71CA", "71D2"];
+                
+                if (recommendedLatches.includes(targetAddressHex) || (match.highByte === 0x70 && match.lowByte < 0x80)) {
+                    checkbox.checked = true;
+                }
+                tdCheck.appendChild(checkbox);
+
+                // Offset Column
+                const tdOffset = document.createElement('td');
+                tdOffset.innerHTML = `<span class="highlight">0x${match.offset.toString(16).toUpperCase().padStart(5, '0')}</span><br><span style="color:var(--text-muted); font-size:0.75rem;">dec: ${match.offset}</span>`;
+
+                // Raw Hex Column
+                const tdHex = document.createElement('td');
+                tdHex.className = "hex-code";
+                tdHex.textContent = `8D ${match.lowByte.toString(16).toUpperCase().padStart(2, '0')} ${match.highByte.toString(16).toUpperCase().padStart(2, '0')}`;
+
+                // Disassembly Column
+                const tdAsm = document.createElement('td');
+                tdAsm.className = "asm-code";
+                tdAsm.textContent = `STA $${targetAddressHex}`;
+
+                // Context Column (Extracting context bytes before and after the matched 3-byte instruction)
+                const tdContext = document.createElement('td');
+                const contextDiv = document.createElement('div');
+                contextDiv.className = "context-hex";
+
+                const startOffset = Math.max(0, match.offset - 5);
+                const endOffset = Math.min(fileData.length, match.offset + 8);
+
+                for (let c = startOffset; c < endOffset; c++) {
+                    const span = document.createElement('span');
+                    span.textContent = fileData[c].toString(16).toUpperCase().padStart(2, '0');
+                    
+                    if (c >= match.offset && c <= match.offset + 2) {
+                        span.className = "context-byte target";
+                    } else {
+                        span.className = "context-byte";
+                    }
+                    contextDiv.appendChild(span);
+                }
+                tdContext.appendChild(contextDiv);
+
+                tr.appendChild(tdCheck);
+                tr.appendChild(tdOffset);
+                tr.appendChild(tdHex);
+                tr.appendChild(tdAsm);
+                tr.appendChild(tdContext);
+
+                resultsTableBody.appendChild(tr);
+            });
+        }
+
+        exportBtn.addEventListener('click', () => {
+            if (!fileData) return;
+
+            // Make a clean clone of the loaded binary
+            let patchedBuffer = new Uint8Array(fileData);
+            let patchedCount = 0;
+
+            const checkboxes = document.querySelectorAll('.custom-checkbox');
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const offset = parseInt(cb.dataset.offset);
+                    
+                    // Modify raw absolute store target bytes to EA EA (STA $7xxx -> STA $EAEA)
+                    patchedBuffer[offset + 1] = 0xEA;
+                    patchedBuffer[offset + 2] = 0xEA;
+                    patchedCount++;
+                }
+            });
+
+            // Trigger download of modified binary
+            const blob = new Blob([patchedBuffer], { type: "application/octet-stream" });
+            const link = document.createElement('a');
+            const patchSuffix = `_patched_latches_${patchedCount}`;
+            const cleanName = originalName.replace(/(\.[\w\d]+)$/i, `${patchSuffix}$1`);
+            
+            link.href = URL.createObjectURL(blob);
+            link.download = cleanName === originalName ? originalName + "_patched.bin" : cleanName;
+            link.click();
+            URL.revokeObjectURL(link.href);
+        });
+    </script>
+</body>
+</html>
