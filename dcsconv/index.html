@@ -33,7 +33,6 @@
     };
   </script>
   <style>
-    /* Custom scrollbar and range input styling for precision darkroom feel */
     ::-webkit-scrollbar {
       width: 6px;
       height: 6px;
@@ -99,49 +98,43 @@
       background-size: 20px 20px;
       background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     }
+
+    #sliderTemp::-webkit-slider-runnable-track {
+      background: linear-gradient(90deg, #38bdf8 0%, #94a3b8 50%, #fb923c 100%);
+    }
+    #sliderTemp::-moz-range-track {
+      background: linear-gradient(90deg, #38bdf8 0%, #94a3b8 50%, #fb923c 100%);
+    }
   </style>
 </head>
 <body class="bg-kodak-dark text-slate-200 font-sans antialiased min-h-screen flex flex-col selection:bg-kodak-yellow selection:text-black">
 
   <!-- Top Header Bar -->
   <header class="border-b border-kodak-border bg-kodak-panel/95 backdrop-blur sticky top-0 z-30">
-    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
-      <div class="flex items-center gap-3">
-        <!-- Kodak-inspired Film Badge -->
-        <div class="w-9 h-9 rounded-lg bg-kodak-yellow text-black font-mono font-bold text-sm flex items-center justify-center shadow-md shadow-kodak-yellow/10 select-none">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-kodak-yellow text-black font-mono font-bold text-sm flex items-center justify-center shadow-md shadow-kodak-yellow/10 select-none shrink-0">
           DCS
         </div>
-        <div>
-          <div class="flex items-center gap-2">
-            <h1 class="text-base sm:text-lg font-semibold tracking-tight text-white">Kodak DCS RAW &rarr; PNG Converter</h1>
-            <span class="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-              100% Client-Side
-            </span>
-          </div>
-          <p class="text-xs text-slate-400">In-browser TIFF 6.0 / SubIFD parser &amp; Bayer demosaicing for legacy DCS 200–760 files</p>
+        <div class="min-w-0">
+          <h1 class="text-sm sm:text-base font-semibold tracking-tight text-white truncate">Kodak DCS RAW &rarr; PNG</h1>
+          <p class="text-[11px] text-slate-400 truncate">7300K Calibrated &bull; On-Device Darkroom</p>
         </div>
       </div>
 
-      <div class="flex items-center gap-2 sm:gap-3">
-        <button id="btnSelectFiles" type="button" class="px-3.5 py-2 rounded-lg bg-kodak-card hover:bg-slate-800 border border-kodak-border text-xs sm:text-sm font-medium text-slate-200 transition flex items-center gap-2">
+      <div class="flex items-center gap-2 shrink-0">
+        <button id="btnSelectFiles" type="button" class="px-3.5 py-2.5 rounded-xl bg-kodak-card hover:bg-slate-800 active:scale-[0.99] border border-kodak-border text-xs sm:text-sm font-medium text-slate-200 transition flex items-center gap-1.5">
           <svg class="w-4 h-4 text-kodak-yellow" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
           </svg>
-          <span>Load .TIF / .DCR</span>
+          <span>Open RAW</span>
         </button>
 
-        <button id="btnDownloadPng" type="button" disabled class="px-4 py-2 rounded-lg bg-kodak-yellow hover:bg-amber-400 disabled:opacity-40 disabled:pointer-events-none text-black font-semibold text-xs sm:text-sm transition flex items-center gap-2 shadow-sm">
+        <button id="btnShareOrSave" type="button" disabled class="px-4 py-2.5 rounded-xl bg-kodak-yellow hover:bg-amber-400 active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none text-black font-semibold text-xs sm:text-sm transition flex items-center gap-1.5 shadow-sm">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0-12L8 7m4-4l4 4" />
           </svg>
-          <span>Download PNG</span>
-        </button>
-
-        <button id="btnBatchDownload" type="button" class="hidden px-3.5 py-2 rounded-lg bg-kodak-card hover:bg-slate-800 border border-kodak-yellow/40 text-kodak-yellow font-medium text-xs sm:text-sm transition items-center gap-1.5">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2" />
-          </svg>
-          <span id="batchBtnLabel">Export All PNGs</span>
+          <span id="shareBtnLabel">Save / Share Photo</span>
         </button>
       </div>
     </div>
@@ -151,82 +144,66 @@
   <input id="fileInput" type="file" accept=".tif,.tiff,.dcr,.kdc,image/tiff" multiple class="hidden" />
 
   <!-- Toast / Status Banner Area -->
-  <div id="statusBanner" class="hidden border-b border-kodak-border bg-kodak-card/90 px-4 sm:px-6 py-2.5 text-xs">
-    <div class="max-w-[1600px] mx-auto flex flex-wrap items-center justify-between gap-2">
-      <div class="flex items-center gap-2.5">
-        <span id="statusBadge" class="px-2 py-0.5 rounded font-mono font-semibold text-[11px] uppercase bg-kodak-yellow/20 text-kodak-yellow">INFO</span>
-        <span id="statusText" class="text-slate-200"></span>
+  <div id="statusBanner" class="hidden border-b border-kodak-border bg-kodak-card/95 px-4 sm:px-6 py-2 text-xs">
+    <div class="max-w-6xl mx-auto flex items-center justify-between gap-2">
+      <div class="flex items-center gap-2 min-w-0">
+        <span id="statusBadge" class="px-1.5 py-0.5 rounded font-mono font-semibold text-[10px] uppercase bg-kodak-yellow/20 text-kodak-yellow shrink-0">INFO</span>
+        <span id="statusText" class="text-slate-200 truncate"></span>
       </div>
-      <button id="btnDismissStatus" type="button" class="text-slate-400 hover:text-white text-xs underline">Dismiss</button>
+      <button id="btnDismissStatus" type="button" class="text-slate-400 hover:text-white text-xs shrink-0 px-1">Dismiss</button>
     </div>
   </div>
 
   <!-- Main Workspace -->
-  <main class="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-5">
+  <main class="flex-1 max-w-6xl w-full mx-auto p-3 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-5">
 
-    <!-- Left / Center Viewport Column (8 cols on desktop) -->
-    <section class="lg:col-span-8 flex flex-col gap-4 min-w-0">
+    <!-- Image Preview Column (7 cols on desktop) -->
+    <section class="lg:col-span-7 flex flex-col gap-3 min-w-0">
 
-      <!-- Batch File Queue Strip (Shown when files are loaded) -->
-      <div id="fileQueueBar" class="hidden bg-kodak-panel border border-kodak-border rounded-xl p-2.5 flex items-center gap-2 overflow-x-auto">
-        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 px-2 shrink-0">Queue:</span>
-        <div id="fileQueueList" class="flex items-center gap-2"></div>
+      <!-- Batch File Queue Strip (Shown when multiple files are loaded) -->
+      <div id="fileQueueBar" class="hidden bg-kodak-panel border border-kodak-border rounded-xl p-2 flex items-center gap-2 overflow-x-auto">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-slate-400 px-1.5 shrink-0">Files:</span>
+        <div id="fileQueueList" class="flex items-center gap-1.5"></div>
       </div>
 
       <!-- Canvas Viewport Card -->
-      <div class="bg-kodak-panel border border-kodak-border rounded-2xl overflow-hidden flex flex-col flex-1 min-h-[420px] sm:min-h-[540px] shadow-xl">
+      <div class="bg-kodak-panel border border-kodak-border rounded-2xl overflow-hidden flex flex-col flex-1 min-h-[340px] sm:min-h-[480px] shadow-xl">
 
-        <!-- Viewport Toolbar -->
-        <div class="px-4 py-2.5 border-b border-kodak-border bg-kodak-card/60 flex flex-wrap items-center justify-between gap-2">
+        <!-- Minimal Viewport Header -->
+        <div class="px-4 py-2.5 border-b border-kodak-border bg-kodak-card/60 flex items-center justify-between gap-2">
           <div class="flex items-center gap-2 min-w-0">
-            <span id="activeFileName" class="font-mono text-xs sm:text-sm font-medium text-white truncate max-w-[200px] sm:max-w-[320px]">No file loaded</span>
-            <span id="streamSourceBadge" class="hidden px-2 py-0.5 rounded-md font-mono text-[11px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0">
-              Full RAW Sensor
-            </span>
+            <span id="activeFileName" class="font-mono text-xs font-medium text-white truncate">No file loaded</span>
+            <span id="statResolution" class="hidden sm:inline font-mono text-[11px] text-slate-400 shrink-0"></span>
           </div>
 
-          <div class="flex items-center gap-1.5 sm:gap-2">
-            <!-- View Mode Toggle -->
-            <div class="inline-flex rounded-lg bg-kodak-dark p-0.5 border border-kodak-border text-xs">
-              <button type="button" data-viewmode="developed" class="view-mode-btn px-2.5 py-1 rounded-md font-medium bg-kodak-card text-kodak-yellow transition">Developed</button>
-              <button type="button" data-viewmode="raw" class="view-mode-btn px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition">RAW CFA</button>
-              <button type="button" data-viewmode="thumbnail" class="view-mode-btn px-2.5 py-1 rounded-md font-medium text-slate-400 hover:text-white transition">IFD0 Preview</button>
-            </div>
-
-            <!-- Zoom Controls -->
-            <div class="inline-flex items-center rounded-lg bg-kodak-dark border border-kodak-border text-xs">
-              <button id="btnZoomFit" type="button" class="px-2.5 py-1 rounded-l-lg hover:bg-kodak-card text-slate-300 font-mono transition" title="Fit to Viewport">Fit</button>
-              <button id="btnZoom100" type="button" class="px-2.5 py-1 rounded-r-lg border-l border-kodak-border hover:bg-kodak-card text-slate-300 font-mono transition" title="100% Native Pixels">1:1</button>
-            </div>
+          <div class="inline-flex items-center rounded-lg bg-kodak-dark border border-kodak-border text-xs shrink-0">
+            <button id="btnZoomFit" type="button" class="px-2.5 py-1 rounded-l-lg bg-kodak-card text-kodak-yellow font-mono transition" title="Fit to Viewport">Fit</button>
+            <button id="btnZoom100" type="button" class="px-2.5 py-1 rounded-r-lg border-l border-kodak-border hover:bg-kodak-card text-slate-300 font-mono transition" title="100% Native Pixels">1:1</button>
           </div>
         </div>
 
         <!-- Dropzone / Canvas Container -->
-        <div id="viewportContainer" class="relative flex-1 checkerboard overflow-auto flex items-center justify-center p-4 select-none">
+        <div id="viewportContainer" class="relative flex-1 checkerboard overflow-auto flex items-center justify-center p-3 sm:p-4 select-none">
 
           <!-- Empty State Dropzone -->
-          <div id="emptyDropzone" class="w-full max-w-xl border-2 border-dashed border-kodak-border hover:border-kodak-yellow/70 rounded-2xl p-8 sm:p-12 text-center transition cursor-pointer bg-kodak-panel/80 backdrop-blur-sm">
-            <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-kodak-card border border-kodak-border flex items-center justify-center text-kodak-yellow">
-              <svg class="w-7 h-7" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+          <div id="emptyDropzone" class="w-full max-w-md border-2 border-dashed border-kodak-border hover:border-kodak-yellow/70 rounded-2xl p-6 sm:p-10 text-center transition cursor-pointer bg-kodak-panel/85 backdrop-blur-sm">
+            <div class="w-12 h-12 mx-auto mb-3.5 rounded-2xl bg-kodak-card border border-kodak-border flex items-center justify-center text-kodak-yellow">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
               </svg>
             </div>
-            <h2 class="text-base sm:text-lg font-semibold text-white mb-1.5">Drop Kodak DCS .TIF, .TIFF, or .DCR files here</h2>
-            <p class="text-xs sm:text-sm text-slate-400 mb-5 leading-relaxed">
-              Supports Kodak DCS 200, 420, 460, 520, 560, 620, 760 &amp; EOS DCS raw TIFF containers.
-              Extracts full-resolution sensor data from <code class="font-mono text-kodak-yellow">SubIFD</code> instead of the low-res <code class="font-mono text-slate-300">IFD0</code> thumbnail.
+            <h2 class="text-base font-semibold text-white mb-1">Open Kodak DCS .TIF or .DCR</h2>
+            <p class="text-xs text-slate-400 mb-5 leading-relaxed">
+              Tap to choose files from your iPhone or computer, or drop them here. Processed 100% locally.
             </p>
-            <div class="flex flex-wrap items-center justify-center gap-3">
-              <span class="px-4 py-2 rounded-lg bg-kodak-yellow text-black font-semibold text-xs sm:text-sm shadow">
-                Choose Files from Device
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-2.5">
+              <span class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-kodak-yellow text-black font-semibold text-xs sm:text-sm shadow">
+                Select RAW Photo
               </span>
-              <button id="btnLoadDemoDcs" type="button" class="px-4 py-2 rounded-lg bg-kodak-card hover:bg-slate-800 border border-kodak-border text-slate-300 font-medium text-xs sm:text-sm transition">
-                Test with Synthetic DCS RAW Sample
+              <button id="btnLoadDemoDcs" type="button" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-kodak-card hover:bg-slate-800 border border-kodak-border text-slate-300 font-medium text-xs transition">
+                Try Sample RAW
               </button>
             </div>
-            <p class="mt-5 text-[11px] text-slate-500 font-mono">
-              Zero server uploads &bull; All binary parsing &amp; Bayer demosaicing runs locally in JS
-            </p>
           </div>
 
           <!-- Active Preview Canvas -->
@@ -234,214 +211,73 @@
 
           <!-- Drag Overlay -->
           <div id="dragOverlay" class="hidden absolute inset-3 rounded-xl border-2 border-kodak-yellow bg-kodak-dark/90 backdrop-blur-sm flex flex-col items-center justify-center z-20 pointer-events-none">
-            <p class="text-kodak-yellow font-semibold text-base">Release to decode Kodak DCS RAW file</p>
-            <p class="text-xs text-slate-400 mt-1">Local browser processing only</p>
+            <p class="text-kodak-yellow font-semibold text-sm">Release to open Kodak DCS RAW</p>
           </div>
-        </div>
-
-        <!-- Bottom Canvas Telemetry Bar -->
-        <div class="px-4 py-2 border-t border-kodak-border bg-kodak-card/40 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono text-slate-400">
-          <div class="flex items-center gap-4">
-            <span id="statResolution">Resolution: —</span>
-            <span id="statBitDepth">Sensor Depth: —</span>
-            <span id="statCompression">Compression: —</span>
-          </div>
-          <div id="statRenderTime">Ready</div>
-        </div>
-      </div>
-
-      <!-- Technical IFD & Metadata Inspector Accordion/Card -->
-      <div class="bg-kodak-panel border border-kodak-border rounded-2xl overflow-hidden">
-        <div class="px-4 py-3 border-b border-kodak-border bg-kodak-card/50 flex flex-wrap items-center justify-between gap-2">
-          <div class="flex items-center gap-2">
-            <svg class="w-4 h-4 text-kodak-yellow" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h3 class="text-xs sm:text-sm font-semibold text-white">TIFF / Kodak SubIFD Structure &amp; Metadata Inspector</h3>
-          </div>
-          <div class="flex items-center gap-2">
-            <select id="ifdSelector" class="bg-kodak-dark border border-kodak-border rounded-lg px-2.5 py-1 text-xs font-mono text-slate-200 focus:outline-none focus:border-kodak-yellow">
-              <option value="all">All Parsed IFDs</option>
-            </select>
-            <button id="btnCopyMetadata" type="button" class="px-2.5 py-1 rounded-lg bg-kodak-card hover:bg-slate-800 border border-kodak-border text-xs font-mono text-slate-300 transition">
-              Copy Dump
-            </button>
-          </div>
-        </div>
-
-        <!-- Summary Cards for Key Kodak Metadata -->
-        <div id="metaSummaryGrid" class="grid grid-cols-2 sm:grid-cols-4 gap-px bg-kodak-border border-b border-kodak-border">
-          <div class="bg-kodak-panel p-3">
-            <div class="text-[10px] font-mono uppercase text-slate-500">Camera Model</div>
-            <div id="metaModel" class="text-xs sm:text-sm font-medium text-white truncate mt-0.5">—</div>
-          </div>
-          <div class="bg-kodak-panel p-3">
-            <div class="text-[10px] font-mono uppercase text-slate-500">Endianness / Magic</div>
-            <div id="metaEndian" class="text-xs sm:text-sm font-mono text-slate-200 truncate mt-0.5">—</div>
-          </div>
-          <div class="bg-kodak-panel p-3">
-            <div class="text-[10px] font-mono uppercase text-slate-500">Active CFA</div>
-            <div id="metaCfa" class="text-xs sm:text-sm font-mono text-kodak-yellow truncate mt-0.5">GRBG</div>
-          </div>
-          <div class="bg-kodak-panel p-3">
-            <div class="text-[10px] font-mono uppercase text-slate-500">IFD0 vs SubIFD</div>
-            <div id="metaIfdRatio" class="text-xs sm:text-sm font-mono text-slate-200 truncate mt-0.5">—</div>
-          </div>
-        </div>
-
-        <!-- Kodak ASCII / Proprietary Notes Box -->
-        <div id="kodakNotesBox" class="hidden px-4 py-2.5 bg-kodak-dark/70 border-b border-kodak-border font-mono text-[11px] text-amber-200/90 whitespace-pre-wrap max-h-28 overflow-y-auto"></div>
-
-        <!-- Raw Tag Table -->
-        <div class="max-h-64 overflow-auto">
-          <table class="w-full text-left border-collapse font-mono text-xs">
-            <thead class="bg-kodak-card/80 text-slate-400 sticky top-0 text-[11px] uppercase">
-              <tr>
-                <th class="py-2 px-3 border-b border-kodak-border">IFD</th>
-                <th class="py-2 px-3 border-b border-kodak-border">Tag ID</th>
-                <th class="py-2 px-3 border-b border-kodak-border">Tag Name</th>
-                <th class="py-2 px-3 border-b border-kodak-border">Type &times; Count</th>
-                <th class="py-2 px-3 border-b border-kodak-border">Decoded Value</th>
-              </tr>
-            </thead>
-            <tbody id="ifdTableBody" class="divide-y divide-kodak-border/60 text-slate-300">
-              <tr>
-                <td colspan="5" class="py-6 px-4 text-center text-slate-500 font-sans">
-                  Load a Kodak DCS .tif or .dcr file to inspect its TIFF headers, SubIFD pointers, and compression tags.
-                </td>
-              </tr>
-            </tbody>
-          </table>
         </div>
       </div>
     </section>
 
-    <!-- Right Controls Sidebar (4 cols on desktop) -->
-    <aside class="lg:col-span-4 flex flex-col gap-4">
-
-      <!-- RAW Development Controls Card -->
-      <div class="bg-kodak-panel border border-kodak-border rounded-2xl p-4 sm:p-5 flex flex-col gap-4 shadow-xl">
+    <!-- Minimal Darkroom Controls Sidebar (5 cols on desktop) -->
+    <aside class="lg:col-span-5 flex flex-col gap-4">
+      <div class="bg-kodak-panel border border-kodak-border rounded-2xl p-4 sm:p-5 flex flex-col gap-5 shadow-xl">
         <div class="flex items-center justify-between border-b border-kodak-border pb-3">
           <div>
-            <h2 class="text-sm font-semibold text-white">RAW Sensor Development</h2>
-            <p class="text-[11px] text-slate-400">Real-time demosaicing &amp; tone pipeline</p>
+            <h2 class="text-sm font-semibold text-white">Tone &amp; Color Balance</h2>
+            <p class="text-[11px] text-slate-400">GRBG Bayer &bull; Ektachrome Vivid</p>
           </div>
-          <button id="btnResetParams" type="button" class="px-2.5 py-1 rounded-lg bg-kodak-card hover:bg-slate-800 border border-kodak-border text-xs text-slate-300 transition">
+          <button id="btnResetParams" type="button" class="px-3 py-1.5 rounded-lg bg-kodak-card hover:bg-slate-800 border border-kodak-border text-xs font-medium text-slate-300 transition">
             Reset
           </button>
         </div>
 
-        <!-- Bayer CFA Pattern Override -->
-        <div class="space-y-1.5">
-        <!-- Bayer CFA Pattern Selector (Manual Selection) -->
-        <div class="space-y-1.5">
-          <div class="flex items-center justify-between">
-            <label for="cfaSelect" class="text-xs font-medium text-slate-300">Bayer CFA Pattern</label>
-            <span class="text-[11px] font-mono text-slate-500">Manual</span>
+        <!-- 1. Warmer / Colder Balance Slider -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between gap-2">
+            <label for="sliderTemp" class="text-xs font-medium text-slate-200">Warmer / Colder</label>
+            <span id="valTemp" class="font-mono text-[11px] text-kodak-yellow">Neutral 7300K (R 1.40x · B 2.20x)</span>
           </div>
-          <select id="cfaSelect" class="w-full bg-kodak-card border border-kodak-border rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-kodak-yellow">
-            <option value="GRBG" selected>GRBG (Kodak DCS 420 / 460 / 520 / 620)</option>
-            <option value="RGGB">RGGB (Standard Kodak DCS / Nikon / Canon)</option>
-            <option value="GBRG">GBRG (Alternative Sensor Readout)</option>
-            <option value="BGGR">BGGR (Inverted Row/Col Readout)</option>
-            <option value="MONO">Monochrome (B&amp;W / DCS 420m / 460m)</option>
-          </select>
+          <input id="sliderTemp" type="range" min="-50" max="50" step="1" value="0" class="w-full py-1" />
+          <div class="flex justify-between text-[10px] font-mono text-slate-400">
+            <span class="text-sky-400">&larr; Colder</span>
+            <span>7300K</span>
+            <span class="text-amber-400">Warmer &rarr;</span>
+          </div>
         </div>
 
-        <!-- Demosaic Quality -->
-        <div class="space-y-1.5">
-          <label for="demosaicSelect" class="text-xs font-medium text-slate-300">Demosaic Algorithm</label>
-          <select id="demosaicSelect" class="w-full bg-kodak-card border border-kodak-border rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-kodak-yellow">
-            <option value="malvar" selected>Malvar-He-Cutler (High-Quality Gradient)</option>
-            <option value="bilinear">Fast Bilinear Interpolation</option>
-          </select>
-        </div>
-
-        <!-- Exposure EV -->
-        <div class="space-y-1.5 pt-1">
+        <!-- 2. Black Level Pedestal Slider -->
+        <div class="space-y-2">
           <div class="flex justify-between text-xs">
-            <label for="sliderExposure" class="font-medium text-slate-300">Exposure (EV)</label>
-            <span id="valExposure" class="font-mono text-kodak-yellow">+0.00 EV</span>
-          </div>
-          <input id="sliderExposure" type="range" min="-3.0" max="4.0" step="0.05" value="0" class="w-full" />
-        </div>
-
-        <!-- White Balance Gains -->
-        <div class="p-3 rounded-xl bg-kodak-card/60 border border-kodak-border space-y-3">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-medium text-slate-200">White Balance Gains</span>
-            <span class="text-[11px] font-mono text-slate-500">Manual R / B</span>
-          </div>
-
-          <!-- Red Gain -->
-          <div class="space-y-1">
-            <div class="flex justify-between text-xs">
-              <label for="sliderRedGain" class="text-rose-300">Red Gain (R)</label>
-              <span id="valRedGain" class="font-mono text-slate-300">1.40x</span>
-            </div>
-            <input id="sliderRedGain" type="range" min="0.4" max="3.5" step="0.02" value="1.4" class="w-full" />
-          </div>
-
-          <!-- Blue Gain -->
-          <div class="space-y-1">
-            <div class="flex justify-between text-xs">
-              <label for="sliderBlueGain" class="text-sky-300">Blue Gain (B)</label>
-              <span id="valBlueGain" class="font-mono text-slate-300">2.20x</span>
-            </div>
-            <input id="sliderBlueGain" type="range" min="0.4" max="3.5" step="0.02" value="2.2" class="w-full" />
-          </div>
-        </div>
-
-        <!-- Black Level Offset -->
-        <div class="space-y-1.5">
-          <div class="flex justify-between text-xs">
-            <label for="sliderBlackLevel" class="font-medium text-slate-300">Black Level Pedestal</label>
+            <label for="sliderBlackLevel" class="font-medium text-slate-200">Black Level</label>
             <span id="valBlackLevel" class="font-mono text-slate-300">26</span>
           </div>
-          <input id="sliderBlackLevel" type="range" min="0" max="512" step="1" value="26" class="w-full" />
+          <input id="sliderBlackLevel" type="range" min="0" max="128" step="1" value="26" class="w-full py-1" />
         </div>
 
-        <!-- Contrast -->
-        <div class="space-y-1.5">
+        <!-- 3. Contrast Slider -->
+        <div class="space-y-2">
           <div class="flex justify-between text-xs">
-            <label for="sliderContrast" class="font-medium text-slate-300">Tone Contrast</label>
+            <label for="sliderContrast" class="font-medium text-slate-200">Contrast</label>
             <span id="valContrast" class="font-mono text-slate-300">1.10</span>
           </div>
-          <input id="sliderContrast" type="range" min="0.5" max="1.8" step="0.02" value="1.1" class="w-full" />
+          <input id="sliderContrast" type="range" min="0.50" max="2.00" step="0.05" value="1.10" class="w-full py-1" />
         </div>
 
-        <!-- Gamma / sRGB Curve -->
-        <div class="space-y-1.5">
-          <div class="flex justify-between text-xs">
-            <label for="sliderGamma" class="font-medium text-slate-300">Output Gamma (sRGB 2.2)</label>
-            <span id="valGamma" class="font-mono text-slate-300">2.20</span>
-          </div>
-          <input id="sliderGamma" type="range" min="1.0" max="3.0" step="0.05" value="2.2" class="w-full" />
-        </div>
+        <!-- Export Actions -->
+        <div class="pt-2 border-t border-kodak-border flex flex-col gap-2">
+          <button id="btnShareMain" type="button" disabled class="w-full py-3 px-4 rounded-xl bg-kodak-yellow hover:bg-amber-400 active:scale-[0.99] disabled:opacity-40 disabled:pointer-events-none text-black font-semibold text-sm transition flex items-center justify-center gap-2 shadow">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 3v12m0-12L8 7m4-4l4 4" />
+            </svg>
+            <span id="shareMainLabel">Save / Share Photo</span>
+          </button>
 
-        <!-- Color Matrix Preset -->
-        <div class="space-y-1.5">
-          <label for="colorMatrixSelect" class="text-xs font-medium text-slate-300">Kodak CCD Color Profile</label>
-          <select id="colorMatrixSelect" class="w-full bg-kodak-card border border-kodak-border rounded-xl px-3 py-2 text-xs font-mono text-white focus:outline-none focus:border-kodak-yellow">
-            <option value="vivid" selected>Kodak Ektachrome Vivid Boost</option>
-            <option value="kodak_ccd">Kodak DCS Neutral CCD (KAF-1600 / KAF-6300)</option>
-            <option value="kodachrome">Kodak Kodachrome Classic</option>
-            <option value="neutral">Linear / Uncalibrated Sensor RGB</option>
-          </select>
+          <button id="btnDirectDownload" type="button" disabled class="w-full py-2.5 px-4 rounded-xl bg-kodak-card hover:bg-slate-800 disabled:opacity-40 disabled:pointer-events-none border border-kodak-border text-xs font-medium text-slate-300 transition flex items-center justify-center gap-1.5">
+            <svg class="w-3.5 h-3.5 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            <span>Download PNG File</span>
+          </button>
         </div>
-      </div>
-
-      <!-- Technical Compatibility & Privacy Card -->
-      <div class="bg-kodak-panel border border-kodak-border rounded-2xl p-4 text-xs text-slate-400 space-y-2.5">
-        <div class="flex items-center gap-2 text-slate-200 font-semibold">
-          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
-          <span>Supported Kodak DCS Variants</span>
-        </div>
-        <ul class="space-y-1.5 text-[11px] leading-relaxed list-disc pl-4">
-          <li><strong class="text-slate-200">SubIFD Extraction:</strong> Automatically locates Tag <code class="font-mono text-kodak-yellow">330 (0x014A)</code> to bypass low-res <code class="font-mono">IFD0</code> thumbnails.</li>
-          <li><strong class="text-slate-200">Compression Modes:</strong> Uncompressed 8/10/12/16-bit (<code class="font-mono">1</code>), Kodak DPCM/Huffman lossless &amp; delta-packed RAW (<code class="font-mono">65000</code>, <code class="font-mono">32867</code>, <code class="font-mono">34713</code>), and JPEG/RGB fallback.</li>
-          <li><strong class="text-slate-200">Sample Diagnostics:</strong> If an uncommon DCS firmware variant decodes with shifted colors or stride, switch the <em>Bayer CFA Pattern</em> dropdown or copy the <em>IFD Dump</em> above.</li>
-        </ul>
       </div>
     </aside>
   </main>
@@ -449,218 +285,18 @@
   <script>
     /**
      * Kodak DCS RAW (.TIF / .DCR) to PNG Client-Side Converter
-     * Complete TIFF 6.0 + SubIFD Parser, Kodak DPCM/Packed RAW Decoder,
-     * Malvar-He-Cutler / Bilinear Bayer Demosaicing, and Color Pipeline.
+     * Complete Self-Contained Darkroom Engine with 7300K Slider & iOS Share Sheet Support.
      */
 
     // =========================================================================
-    // 1. TIFF TAG DICTIONARY & CONSTANTS
-    // =========================================================================
-    const TIFF_TAGS = {
-      254: 'NewSubfileType',
-      255: 'SubfileType',
-      256: 'ImageWidth',
-      257: 'ImageLength',
-      258: 'BitsPerSample',
-      259: 'Compression',
-      262: 'PhotometricInterpretation',
-      270: 'ImageDescription',
-      271: 'Make',
-      272: 'Model',
-      273: 'StripOffsets',
-      274: 'Orientation',
-      277: 'SamplesPerPixel',
-      278: 'RowsPerStrip',
-      279: 'StripByteCounts',
-      282: 'XResolution',
-      283: 'YResolution',
-      284: 'PlanarConfiguration',
-      296: 'ResolutionUnit',
-      305: 'Software',
-      306: 'DateTime',
-      315: 'Artist',
-      322: 'TileWidth',
-      323: 'TileLength',
-      324: 'TileOffsets',
-      325: 'TileByteCounts',
-      330: 'SubIFDs',
-      33421: 'CFARepeatPatternDim',
-      33422: 'CFAPattern',
-      33423: 'BatteryLevel',
-      33432: 'Copyright',
-      33434: 'ExposureTime',
-      33437: 'FNumber',
-      34665: 'ExifIFDPointer',
-      34853: 'GPSInfoIFDPointer',
-      34855: 'ISOSpeedRatings',
-      36867: 'DateTimeOriginal',
-      37377: 'ShutterSpeedValue',
-      37378: 'ApertureValue',
-      37386: 'FocalLength',
-      50706: 'DNGVersion',
-      50714: 'BlackLevel',
-      50717: 'WhiteLevel',
-      50721: 'ColorMatrix1',
-      50728: 'AsShotNeutral',
-      // Kodak Proprietary Tags
-      65000: 'KodakTag_65000',
-      65001: 'KodakTag_65001',
-      65002: 'KodakTag_65002',
-      65003: 'KodakTag_65003',
-      65024: 'KodakCameraSerial',
-      65025: 'KodakSettingsASCII',
-      65026: 'KodakIFD',
-      65100: 'KodakLinearizationTable',
-      65101: 'KodakWhiteBalance',
-      65102: 'KodakColorMatrix'
-    };
-
-    const TYPE_SIZES = {
-      1: 1,  // BYTE
-      2: 1,  // ASCII
-      3: 2,  // SHORT
-      4: 4,  // LONG
-      5: 8,  // RATIONAL
-      6: 1,  // SBYTE
-      7: 1,  // UNDEFINED
-      8: 2,  // SSHORT
-      9: 4,  // SLONG
-      10: 8, // SRATIONAL
-      11: 4, // FLOAT
-      12: 8, // DOUBLE
-      13: 4  // IFD
-    };
-
-    const TYPE_NAMES = {
-      1: 'BYTE', 2: 'ASCII', 3: 'SHORT', 4: 'LONG', 5: 'RATIONAL',
-      6: 'SBYTE', 7: 'UNDEFINED', 8: 'SSHORT', 9: 'SLONG', 10: 'SRATIONAL',
-      11: 'FLOAT', 12: 'DOUBLE', 13: 'IFD'
-    };
-
-    const COMPRESSION_NAMES = {
-      1: 'Uncompressed (1)',
-      5: 'LZW (5)',
-      6: 'Old JPEG / Lossless (6)',
-      7: 'JPEG / Lossless Huffman (7)',
-      8: 'Deflate / ZIP (8)',
-      32773: 'PackBits (32773)',
-      32867: 'Kodak KDC / DCS RLE-DPCM (32867)',
-      34713: 'Nikon/Kodak NEF/DCR Packed (34713)',
-      65000: 'Kodak DCS Lossless DPCM (65000)'
-    };
-
-    // =========================================================================
-    // 2. APPLICATION STATE
-    // =========================================================================
-    const DEFAULT_PARAMS = {
-      cfaPattern: 'GRBG',
-      demosaic: 'malvar',
-      exposure: 0.0,
-      redGain: 1.4,
-      blueGain: 2.2,
-      blackLevel: 23,
-      contrast: 1.1,
-      gamma: 2.2,
-      colorMatrix: 'vivid'
-    };
-
-    const state = {
-      files: [],        // Array of parsed file records
-      activeIndex: -1,
-      viewMode: 'developed', // 'developed' | 'raw' | 'thumbnail'
-      zoomMode: 'fit',       // 'fit' | '100'
-      params: { ...DEFAULT_PARAMS }
-    };
-
-    // =========================================================================
-    // 3. DOM REFERENCES
-    // =========================================================================
-    const els = {
-      fileInput: document.getElementById('fileInput'),
-      btnSelectFiles: document.getElementById('btnSelectFiles'),
-      btnDownloadPng: document.getElementById('btnDownloadPng'),
-      btnBatchDownload: document.getElementById('btnBatchDownload'),
-      batchBtnLabel: document.getElementById('batchBtnLabel'),
-      btnLoadDemoDcs: document.getElementById('btnLoadDemoDcs'),
-      statusBanner: document.getElementById('statusBanner'),
-      statusBadge: document.getElementById('statusBadge'),
-      statusText: document.getElementById('statusText'),
-      btnDismissStatus: document.getElementById('btnDismissStatus'),
-      fileQueueBar: document.getElementById('fileQueueBar'),
-      fileQueueList: document.getElementById('fileQueueList'),
-      activeFileName: document.getElementById('activeFileName'),
-      streamSourceBadge: document.getElementById('streamSourceBadge'),
-      viewportContainer: document.getElementById('viewportContainer'),
-      emptyDropzone: document.getElementById('emptyDropzone'),
-      dragOverlay: document.getElementById('dragOverlay'),
-      previewCanvas: document.getElementById('previewCanvas'),
-      btnZoomFit: document.getElementById('btnZoomFit'),
-      btnZoom100: document.getElementById('btnZoom100'),
-      statResolution: document.getElementById('statResolution'),
-      statBitDepth: document.getElementById('statBitDepth'),
-      statCompression: document.getElementById('statCompression'),
-      statRenderTime: document.getElementById('statRenderTime'),
-      // Inspector
-      ifdSelector: document.getElementById('ifdSelector'),
-      btnCopyMetadata: document.getElementById('btnCopyMetadata'),
-      metaModel: document.getElementById('metaModel'),
-      metaEndian: document.getElementById('metaEndian'),
-      metaCfa: document.getElementById('metaCfa'),
-      metaIfdRatio: document.getElementById('metaIfdRatio'),
-      kodakNotesBox: document.getElementById('kodakNotesBox'),
-      ifdTableBody: document.getElementById('ifdTableBody'),
-      // Controls
-      btnResetParams: document.getElementById('btnResetParams'),
-      cfaSelect: document.getElementById('cfaSelect'),
-      demosaicSelect: document.getElementById('demosaicSelect'),
-      sliderExposure: document.getElementById('sliderExposure'),
-      valExposure: document.getElementById('valExposure'),
-      sliderRedGain: document.getElementById('sliderRedGain'),
-      valRedGain: document.getElementById('valRedGain'),
-      sliderBlueGain: document.getElementById('sliderBlueGain'),
-      valBlueGain: document.getElementById('valBlueGain'),
-      sliderBlackLevel: document.getElementById('sliderBlackLevel'),
-      valBlackLevel: document.getElementById('valBlackLevel'),
-      sliderContrast: document.getElementById('sliderContrast'),
-      valContrast: document.getElementById('valContrast'),
-      sliderGamma: document.getElementById('sliderGamma'),
-      valGamma: document.getElementById('valGamma'),
-      colorMatrixSelect: document.getElementById('colorMatrixSelect')
-    };
-
-    // =========================================================================
-    // 4. STATUS / TOAST HELPER (NO alert() USED)
-    // =========================================================================
-    function showStatus(type, message) {
-      els.statusBanner.classList.remove('hidden');
-      els.statusText.textContent = message;
-      els.statusBadge.textContent = type;
-      els.statusBadge.className = 'px-2 py-0.5 rounded font-mono font-semibold text-[11px] uppercase ';
-      if (type === 'ERROR') {
-        els.statusBadge.className += 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
-      } else if (type === 'WARN') {
-        els.statusBadge.className += 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
-      } else {
-        els.statusBadge.className += 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
-      }
-    }
-
-    els.btnDismissStatus.addEventListener('click', () => {
-      els.statusBanner.classList.add('hidden');
-    });
-
-    // =========================================================================
-    // 5. TIFF 6.0 & KODAK DCS BINARY PARSER
+    // 1. TIFF 6.0 & KODAK SUB-IFD BINARY PARSER
     // =========================================================================
     class TiffDcsParser {
-      constructor(arrayBuffer) {
-        this.buffer = arrayBuffer;
-        this.view = new DataView(arrayBuffer);
-        this.bytes = new Uint8Array(arrayBuffer);
+      constructor(buffer) {
+        this.buffer = buffer;
+        this.view = new DataView(buffer);
+        this.bytes = new Uint8Array(buffer);
         this.littleEndian = true;
-        this.ifds = [];
-        this.visitedOffsets = new Set();
-        this.kodakAsciiNotes = [];
       }
 
       parse() {
@@ -668,791 +304,644 @@
           throw new Error('File is too small to be a valid TIFF/DCS container.');
         }
 
-        const b0 = this.bytes[0];
-        const b1 = this.bytes[1];
-        if (b0 === 0x49 && b1 === 0x49) {
-          this.littleEndian = true; // 'II' Intel
-        } else if (b0 === 0x4D && b1 === 0x4D) {
-          this.littleEndian = false; // 'MM' Motorola
+        const byte0 = this.view.getUint8(0);
+        const byte1 = this.view.getUint8(1);
+        if (byte0 === 0x49 && byte1 === 0x49) {
+          this.littleEndian = true;  // 'II' Intel Little-Endian
+        } else if (byte0 === 0x4d && byte1 === 0x4d) {
+          this.littleEndian = false; // 'MM' Motorola Big-Endian
         } else {
-          throw new Error(`Invalid TIFF byte-order marker: 0x${b0.toString(16)}${b1.toString(16)} (expected II or MM).`);
+          throw new Error('Invalid TIFF header magic bytes (expected II or MM).');
         }
 
         const magic = this.view.getUint16(2, this.littleEndian);
-        if (magic !== 42 && magic !== 43) {
-          throw new Error(`Unsupported TIFF magic number: ${magic} (expected 42).`);
+        if (magic !== 42) {
+          throw new Error(`Unsupported TIFF magic version (${magic}).`);
         }
 
         const firstIfdOffset = this.view.getUint32(4, this.littleEndian);
-        this.readIfdChain(firstIfdOffset, 'IFD');
+        const ifds = [];
+        const visitedOffsets = new Set();
 
-        // Scan header / Kodak ASCII blocks for embedded camera notes (e.g. DCS 200/420/460 ASCII blocks)
-        this.extractKodakHeaderNotes();
+        const readIfdChain = (startOffset, labelPrefix = 'IFD') => {
+          let offset = startOffset;
+          let chainIndex = 0;
+          while (offset > 0 && offset < this.buffer.byteLength - 2 && !visitedOffsets.has(offset)) {
+            visitedOffsets.add(offset);
+            const ifd = this.readSingleIfd(offset, `${labelPrefix}${chainIndex}`);
+            ifds.push(ifd);
 
-        if (this.ifds.length === 0) {
-          throw new Error('No valid Image File Directories (IFDs) found in file.');
+            // Follow SubIFDs (Tag 330 / 0x014A) & KodakIFD (Tag 65026 / 0xFE02)
+            if (ifd.tags[330]) {
+              const subOffsets = Array.isArray(ifd.tags[330]) ? ifd.tags[330] : [ifd.tags[330]];
+              subOffsets.forEach((subOff, sIdx) => {
+                if (subOff > 0 && subOff < this.buffer.byteLength - 2) {
+                  readIfdChain(subOff, `SubIFD${sIdx}_`);
+                }
+              });
+            }
+            if (ifd.tags[65026]) {
+              const kodakOff = Array.isArray(ifd.tags[65026]) ? ifd.tags[65026][0] : ifd.tags[65026];
+              if (kodakOff > 0 && kodakOff < this.buffer.byteLength - 2) {
+                readIfdChain(kodakOff, 'KodakIFD_');
+              }
+            }
+
+            offset = ifd.nextIfdOffset;
+            chainIndex++;
+          }
+        };
+
+        readIfdChain(firstIfdOffset, 'IFD');
+
+        if (ifds.length === 0) {
+          throw new Error('No readable Image File Directories (IFDs) found.');
         }
 
         return {
           littleEndian: this.littleEndian,
-          magic,
-          ifds: this.ifds,
-          kodakAsciiNotes: this.kodakAsciiNotes
+          ifds
         };
       }
 
-      readIfdChain(startOffset, prefix) {
-        let offset = startOffset;
-        let index = 0;
-
-        while (offset > 0 && offset + 2 <= this.buffer.byteLength) {
-          if (this.visitedOffsets.has(offset)) break;
-          this.visitedOffsets.add(offset);
-
-          const label = prefix === 'IFD' ? `IFD${index}` : `${prefix}_${index}`;
-          const ifd = this.readSingleIfd(offset, label);
-          if (!ifd) break;
-
-          this.ifds.push(ifd);
-
-          // Follow SubIFDs pointer (Tag 330 / 0x014A) where Kodak DCS stores the full RAW image
-          const subIfdTag = ifd.tags[330];
-          if (subIfdTag && Array.isArray(subIfdTag.values)) {
-            subIfdTag.values.forEach((subOffset, sIdx) => {
-              if (subOffset > 0 && subOffset < this.buffer.byteLength) {
-                this.readIfdChain(subOffset, `${label}_SubIFD${sIdx}`);
-              }
-            });
-          }
-
-          // Follow Kodak proprietary IFD pointer (Tag 65026) if present
-          const kodakIfdTag = ifd.tags[65026];
-          if (kodakIfdTag && Array.isArray(kodakIfdTag.values) && kodakIfdTag.values[0] > 0) {
-            this.readIfdChain(kodakIfdTag.values[0], `${label}_KodakIFD`);
-          }
-
-          offset = ifd.nextIfdOffset;
-          index++;
-        }
-      }
-
-      readSingleIfd(offset, label) {
-        if (offset + 2 > this.buffer.byteLength) return null;
+      readSingleIfd(offset, name) {
         const entryCount = this.view.getUint16(offset, this.littleEndian);
-        if (entryCount === 0 || offset + 2 + entryCount * 12 + 4 > this.buffer.byteLength) {
-          return null;
-        }
-
         const tags = {};
-        const tagList = [];
+        let cursor = offset + 2;
+
+        const TYPE_SIZES = {
+          1: 1,  // BYTE
+          2: 1,  // ASCII
+          3: 2,  // SHORT
+          4: 4,  // LONG
+          5: 8,  // RATIONAL
+          6: 1,  // SBYTE
+          7: 1,  // UNDEFINED
+          8: 2,  // SSHORT
+          9: 4,  // SLONG
+          10: 8, // SRATIONAL
+          11: 4, // FLOAT
+          12: 8, // DOUBLE
+          13: 4  // IFD offset
+        };
 
         for (let i = 0; i < entryCount; i++) {
-          const entryOffset = offset + 2 + i * 12;
-          const tagId = this.view.getUint16(entryOffset, this.littleEndian);
-          const type = this.view.getUint16(entryOffset + 2, this.littleEndian);
-          const count = this.view.getUint32(entryOffset + 4, this.littleEndian);
-          const rawValueBytes = entryOffset + 8;
+          if (cursor + 12 > this.buffer.byteLength) break;
 
-          const values = this.readTagValues(type, count, rawValueBytes);
-          const tagObj = {
-            ifdLabel: label,
-            id: tagId,
-            name: TIFF_TAGS[tagId] || `Tag_${tagId}`,
-            type,
-            typeName: TYPE_NAMES[type] || `TYPE_${type}`,
-            count,
-            values
-          };
-          tags[tagId] = tagObj;
-          tagList.push(tagObj);
+          const tagId = this.view.getUint16(cursor, this.littleEndian);
+          const type = this.view.getUint16(cursor + 2, this.littleEndian);
+          const count = this.view.getUint32(cursor + 4, this.littleEndian);
+          const elemSize = TYPE_SIZES[type] || 1;
+          const totalBytes = count * elemSize;
+
+          let valueOffset = cursor + 8;
+          if (totalBytes > 4) {
+            valueOffset = this.view.getUint32(cursor + 8, this.littleEndian);
+          }
+
+          if (valueOffset + totalBytes <= this.buffer.byteLength) {
+            tags[tagId] = this.readTagValues(type, count, valueOffset);
+          }
+
+          cursor += 12;
         }
 
-        const nextIfdOffset = this.view.getUint32(offset + 2 + entryCount * 12, this.littleEndian);
-        const width = this.getScalar(tags[256], 0);
-        const height = this.getScalar(tags[257], 0);
-        const bitsPerSample = tags[258] ? tags[258].values : [8];
-        const compression = this.getScalar(tags[259], 1);
-        const photometric = this.getScalar(tags[262], 2);
-        const samplesPerPixel = this.getScalar(tags[277], 1);
+        const nextIfdOffset = (cursor + 4 <= this.buffer.byteLength)
+          ? this.view.getUint32(cursor, this.littleEndian)
+          : 0;
 
         return {
-          label,
+          name,
           offset,
-          nextIfdOffset,
-          width,
-          height,
-          bitsPerSample,
-          compression,
-          photometric,
-          samplesPerPixel,
           tags,
-          tagList
+          nextIfdOffset
         };
       }
 
-      readTagValues(type, count, inlineOffset) {
-        const unitSize = TYPE_SIZES[type] || 1;
-        const totalBytes = unitSize * count;
-        let dataOffset = inlineOffset;
-
-        if (totalBytes > 4) {
-          dataOffset = this.view.getUint32(inlineOffset, this.littleEndian);
-        }
-
-        if (dataOffset < 0 || dataOffset + totalBytes > this.buffer.byteLength) {
-          return [];
-        }
-
+      readTagValues(type, count, offset) {
         if (type === 2) {
           // ASCII string
           let str = '';
           for (let i = 0; i < count; i++) {
-            const ch = this.bytes[dataOffset + i];
+            const ch = this.bytes[offset + i];
             if (ch === 0) break;
-            if (ch >= 32 && ch <= 126) str += String.fromCharCode(ch);
+            str += String.fromCharCode(ch);
           }
-          return [str.trim()];
+          return str.trim();
         }
 
-        const limit = Math.min(count, 4096); // Guard against massive arrays in metadata preview
-        const arr = new Array(limit);
-        for (let i = 0; i < limit; i++) {
-          const pos = dataOffset + i * unitSize;
+        if (type === 7 || type === 1) {
+          if (count === 1) return this.bytes[offset];
+          return new Uint8Array(this.buffer, offset, count);
+        }
+
+        const values = [];
+        for (let i = 0; i < count; i++) {
+          const pos = offset + i * (type === 5 || type === 10 || type === 12 ? 8 : (type === 3 || type === 8 ? 2 : 4));
           switch (type) {
-            case 1: // BYTE
-            case 7: // UNDEFINED
-              arr[i] = this.bytes[pos];
-              break;
-            case 6: // SBYTE
-              arr[i] = this.view.getInt8(pos);
-              break;
             case 3: // SHORT
-              arr[i] = this.view.getUint16(pos, this.littleEndian);
-              break;
-            case 8: // SSHORT
-              arr[i] = this.view.getInt16(pos, this.littleEndian);
+              values.push(this.view.getUint16(pos, this.littleEndian));
               break;
             case 4: // LONG
             case 13: // IFD
-              arr[i] = this.view.getUint32(pos, this.littleEndian);
-              break;
-            case 9: // SLONG
-              arr[i] = this.view.getInt32(pos, this.littleEndian);
+              values.push(this.view.getUint32(pos, this.littleEndian));
               break;
             case 5: { // RATIONAL
               const num = this.view.getUint32(pos, this.littleEndian);
               const den = this.view.getUint32(pos + 4, this.littleEndian);
-              arr[i] = den !== 0 ? num / den : 0;
+              values.push(den !== 0 ? num / den : 0);
               break;
             }
+            case 8: // SSHORT
+              values.push(this.view.getInt16(pos, this.littleEndian));
+              break;
+            case 9: // SLONG
+              values.push(this.view.getInt32(pos, this.littleEndian));
+              break;
             case 10: { // SRATIONAL
               const num = this.view.getInt32(pos, this.littleEndian);
               const den = this.view.getInt32(pos + 4, this.littleEndian);
-              arr[i] = den !== 0 ? num / den : 0;
+              values.push(den !== 0 ? num / den : 0);
               break;
             }
             case 11: // FLOAT
-              arr[i] = this.view.getFloat32(pos, this.littleEndian);
+              values.push(this.view.getFloat32(pos, this.littleEndian));
               break;
             case 12: // DOUBLE
-              arr[i] = this.view.getFloat64(pos, this.littleEndian);
+              values.push(this.view.getFloat64(pos, this.littleEndian));
               break;
             default:
-              arr[i] = this.bytes[pos];
+              values.push(this.bytes[offset + i]);
           }
         }
-        return arr;
-      }
-
-      getScalar(tag, fallback = 0) {
-        if (!tag || !tag.values || tag.values.length === 0) return fallback;
-        return tag.values[0];
-      }
-
-      extractKodakHeaderNotes() {
-        // Kodak DCS cameras often embed readable ASCII parameter blocks (e.g., "Shutter:", "Aperture:", "ISO:", "Kodak Digital Camera")
-        const scanLen = Math.min(this.bytes.length, 65536);
-        let run = '';
-        const found = [];
-        for (let i = 0; i < scanLen; i++) {
-          const c = this.bytes[i];
-          if ((c >= 32 && c <= 126) || c === 10 || c === 13) {
-            run += String.fromCharCode(c);
-          } else {
-            if (run.length >= 14 && /kodak|dcs|shutter|aperture|iso|serial|gain|white|camera|nikon|canon/i.test(run)) {
-              found.push(run.trim());
-            }
-            run = '';
-          }
-        }
-        if (run.length >= 14 && /kodak|dcs|shutter|aperture|iso|serial/i.test(run)) {
-          found.push(run.trim());
-        }
-        this.kodakAsciiNotes = [...new Set(found)].slice(0, 12);
+        return count === 1 ? values[0] : values;
       }
     }
 
     // =========================================================================
-    // 6. KODAK DCS RAW STREAM DECODER (UNCOMPRESSED, PACKED, & KODAK DPCM)
+    // 2. KODAK DCS RAW STREAM DECODER (UNCOMPRESSED & KODAK DPCM)
     // =========================================================================
     class KodakDcsDecoder {
       constructor(parser, parsedMeta) {
         this.parser = parser;
-        this.meta = parsedMeta;
-        this.bytes = parser.bytes;
-        this.view = parser.view;
-        this.littleEndian = parser.littleEndian;
+        this.parsedMeta = parsedMeta;
       }
 
-      /**
-       * Selects the highest-resolution sensor IFD (usually SubIFD0) and thumbnail IFD (IFD0).
-       */
       selectIfds() {
-        const validImageIfds = this.meta.ifds.filter(ifd => ifd.width > 0 && ifd.height > 0);
-        if (validImageIfds.length === 0) {
-          throw new Error('No image dimensions (ImageWidth/ImageLength) found in any IFD.');
+        const ifds = this.parsedMeta.ifds;
+        let primaryRawIfd = null;
+        let thumbnailIfd = null;
+        let maxPixels = -1;
+        let minPixels = Infinity;
+
+        for (const ifd of ifds) {
+          const w = Number(ifd.tags[256] || 0);
+          const h = Number(ifd.tags[257] || 0);
+          if (w <= 0 || h <= 0) continue;
+
+          const pixels = w * h;
+          const spp = Number(ifd.tags[277] || 1);
+          const subfileType = Number(ifd.tags[254] || 0);
+
+          // Single-channel high-res IFD is the primary RAW CCD capture
+          if (pixels > maxPixels || (pixels === maxPixels && spp === 1)) {
+            maxPixels = pixels;
+            primaryRawIfd = ifd;
+          }
+          if (pixels < minPixels || (subfileType & 1) === 1) {
+            if (pixels <= minPixels) {
+              minPixels = pixels;
+              thumbnailIfd = ifd;
+            }
+          }
         }
 
-        // Sort by pixel area descending to find full-res sensor IFD
-        const sortedByArea = [...validImageIfds].sort((a, b) => (b.width * b.height) - (a.width * a.height));
-        const primaryRawIfd = sortedByArea[0];
+        if (!primaryRawIfd) {
+          throw new Error('Could not find valid image dimensions (Tags 256/257) in file.');
+        }
 
-        // Find smallest IFD (usually IFD0) for thumbnail comparison
-        const thumbnailIfd = sortedByArea.length > 1 ? sortedByArea[sortedByArea.length - 1] : null;
+        if (thumbnailIfd === primaryRawIfd) {
+          thumbnailIfd = null;
+        }
 
         return { primaryRawIfd, thumbnailIfd };
       }
 
-      /**
-       * Assembles contiguous byte buffer from StripOffsets/StripByteCounts or TileOffsets/TileByteCounts.
-       */
-      extractEncodedData(ifd) {
-        const stripOffsets = ifd.tags[273]?.values;
-        const stripByteCounts = ifd.tags[279]?.values;
-        const tileOffsets = ifd.tags[324]?.values;
-        const tileByteCounts = ifd.tags[325]?.values;
+      gatherPayload(ifd) {
+        const offsetsTag = ifd.tags[273] || ifd.tags[324]; // StripOffsets or TileOffsets
+        const countsTag = ifd.tags[279] || ifd.tags[325];  // StripByteCounts or TileByteCounts
 
-        if (stripOffsets && stripOffsets.length > 0) {
-          let totalBytes = 0;
-          const counts = stripByteCounts && stripByteCounts.length === stripOffsets.length
-            ? stripByteCounts
-            : stripOffsets.map((off, idx) => {
-                if (idx + 1 < stripOffsets.length) return Math.max(0, stripOffsets[idx + 1] - off);
-                return Math.max(0, this.bytes.length - off);
-              });
-
-          for (let i = 0; i < counts.length; i++) totalBytes += counts[i];
-          const out = new Uint8Array(totalBytes);
-          let cursor = 0;
-          for (let i = 0; i < stripOffsets.length; i++) {
-            const off = stripOffsets[i];
-            const len = Math.min(counts[i], this.bytes.length - off);
-            if (off >= 0 && len > 0) {
-              out.set(this.bytes.subarray(off, off + len), cursor);
-              cursor += len;
-            }
-          }
-          return out.subarray(0, cursor);
+        if (!offsetsTag) {
+          throw new Error('Missing StripOffsets / TileOffsets in image directory.');
         }
 
-        if (tileOffsets && tileOffsets.length > 0 && tileByteCounts) {
-          // Reassemble tiled image into linear scanlines
-          const tileW = this.parser.getScalar(ifd.tags[322], ifd.width);
-          const tileH = this.parser.getScalar(ifd.tags[323], ifd.height);
-          const tilesAcross = Math.ceil(ifd.width / tileW);
-          const bytesPerSample = Math.ceil((ifd.bitsPerSample[0] || 8) / 8) * ifd.samplesPerPixel;
-          const out = new Uint8Array(ifd.width * ifd.height * bytesPerSample);
+        const offsets = Array.isArray(offsetsTag) ? offsetsTag : [offsetsTag];
+        const counts = countsTag
+          ? (Array.isArray(countsTag) ? countsTag : [countsTag])
+          : offsets.map((off, idx) => {
+              const next = idx + 1 < offsets.length ? offsets[idx + 1] : this.parser.buffer.byteLength;
+              return Math.max(0, next - off);
+            });
 
-          for (let t = 0; t < tileOffsets.length; t++) {
-            const off = tileOffsets[t];
-            const len = tileByteCounts[t] || 0;
-            const tx = (t % tilesAcross) * tileW;
-            const ty = Math.floor(t / tilesAcross) * tileH;
-            const copyW = Math.min(tileW, ifd.width - tx);
-            const copyH = Math.min(tileH, ifd.height - ty);
+        let totalSize = 0;
+        for (let i = 0; i < offsets.length; i++) {
+          totalSize += counts[i] || 0;
+        }
 
-            for (let row = 0; row < copyH; row++) {
-              const srcPos = off + row * tileW * bytesPerSample;
-              const dstPos = ((ty + row) * ifd.width + tx) * bytesPerSample;
-              if (srcPos + copyW * bytesPerSample <= this.bytes.length && dstPos + copyW * bytesPerSample <= out.length) {
-                out.set(this.bytes.subarray(srcPos, srcPos + copyW * bytesPerSample), dstPos);
-              }
+        const payload = new Uint8Array(totalSize);
+        let writePos = 0;
+        for (let i = 0; i < offsets.length; i++) {
+          const off = offsets[i];
+          const len = counts[i] || 0;
+          if (off + len > this.parser.buffer.byteLength) {
+            const safeLen = Math.max(0, this.parser.buffer.byteLength - off);
+            payload.set(new Uint8Array(this.parser.buffer, off, safeLen), writePos);
+            writePos += safeLen;
+          } else {
+            payload.set(new Uint8Array(this.parser.buffer, off, len), writePos);
+            writePos += len;
+          }
+        }
+        return payload;
+      }
+
+      decodeIfd(ifd) {
+        const t = ifd.tags;
+        const width = Number(t[256]);
+        const height = Number(t[257]);
+        const bitsTag = t[258] || 8;
+        const bitsPerSample = Array.isArray(bitsTag) ? Number(bitsTag[0]) : Number(bitsTag);
+        const compression = Number(t[259] || 1);
+        const samplesPerPixel = Number(t[277] || 1);
+        const planarConfig = Number(t[284] || 1);
+
+        const payload = this.gatherPayload(ifd);
+        const pixelCount = width * height;
+
+        // 1. RGB Preview / Thumbnail IFD (samplesPerPixel === 3)
+        if (samplesPerPixel === 3 && compression === 1) {
+          const rgb = new Uint8Array(pixelCount * 3);
+          if (planarConfig === 2) {
+            for (let i = 0; i < pixelCount; i++) {
+              rgb[i * 3] = payload[i] || 0;
+              rgb[i * 3 + 1] = payload[pixelCount + i] || 0;
+              rgb[i * 3 + 2] = payload[pixelCount * 2 + i] || 0;
             }
+          } else {
+            rgb.set(payload.subarray(0, Math.min(payload.length, rgb.length)));
+          }
+          return {
+            width,
+            height,
+            isRgb: true,
+            maxVal: 255,
+            rgbData: rgb
+          };
+        }
+
+        // 2. Single-channel RAW Sensor Array
+        let rawData;
+        let maxVal = (1 << bitsPerSample) - 1;
+
+        if (compression === 1) {
+          // Uncompressed RAW (8-bit, packed 10-bit, 12-bit, or 16-bit)
+          rawData = this.unpackUncompressed(payload, pixelCount, bitsPerSample, this.parser.littleEndian);
+        } else if (compression === 65000 || compression === 32867 || compression === 34713) {
+          // Kodak Lossless DPCM Delta Compression
+          rawData = this.decodeKodakDpcm(payload, width, height, bitsPerSample);
+          maxVal = bitsPerSample > 8 ? 1023 : 255;
+        } else if (compression === 32773) {
+          // PackBits RLE
+          rawData = this.decodePackBits(payload, pixelCount);
+          maxVal = 255;
+        } else {
+          throw new Error(`Unsupported TIFF/DCS compression code (${compression}).`);
+        }
+
+        // Apply Kodak Linearization Table (Tag 65100) if embedded
+        const linearTable = this.findLinearizationTable();
+        if (linearTable && linearTable.length > 0) {
+          let lutMax = 0;
+          for (let i = 0; i < linearTable.length; i++) {
+            if (linearTable[i] > lutMax) lutMax = linearTable[i];
+          }
+          for (let i = 0; i < rawData.length; i++) {
+            const idx = Math.min(linearTable.length - 1, rawData[i]);
+            rawData[i] = linearTable[idx];
+          }
+          if (lutMax > 0) maxVal = lutMax;
+        }
+
+        return {
+          width,
+          height,
+          isRgb: false,
+          maxVal: Math.max(1, maxVal),
+          rawData
+        };
+      }
+
+      findLinearizationTable() {
+        for (const ifd of this.parsedMeta.ifds) {
+          if (ifd.tags[65100] && Array.isArray(ifd.tags[65100])) {
+            return ifd.tags[65100];
+          }
+        }
+        return null;
+      }
+
+      unpackUncompressed(payload, pixelCount, bitsPerSample, littleEndian) {
+        const out = new Uint16Array(pixelCount);
+
+        if (bitsPerSample === 8) {
+          const len = Math.min(pixelCount, payload.length);
+          for (let i = 0; i < len; i++) out[i] = payload[i];
+          return out;
+        }
+
+        if (bitsPerSample === 10 && payload.length < pixelCount * 2) {
+          // Tightly packed 10-bit stream (4 pixels per 5 bytes)
+          let p = 0;
+          for (let b = 0; b + 4 < payload.length && p < pixelCount; b += 5) {
+            const b0 = payload[b];
+            const b1 = payload[b + 1];
+            const b2 = payload[b + 2];
+            const b3 = payload[b + 3];
+            const b4 = payload[b + 4];
+            if (p < pixelCount) out[p++] = ((b0 << 2) | (b1 >> 6)) & 0x3ff;
+            if (p < pixelCount) out[p++] = (((b1 & 0x3f) << 4) | (b2 >> 4)) & 0x3ff;
+            if (p < pixelCount) out[p++] = (((b2 & 0x0f) << 6) | (b3 >> 2)) & 0x3ff;
+            if (p < pixelCount) out[p++] = (((b3 & 0x03) << 8) | b4) & 0x3ff;
           }
           return out;
         }
 
-        throw new Error(`No StripOffsets or TileOffsets found in ${ifd.label}.`);
+        if (bitsPerSample === 12 && payload.length < pixelCount * 2) {
+          // Tightly packed 12-bit stream (2 pixels per 3 bytes)
+          let p = 0;
+          for (let b = 0; b + 2 < payload.length && p < pixelCount; b += 3) {
+            const b0 = payload[b];
+            const b1 = payload[b + 1];
+            const b2 = payload[b + 2];
+            if (p < pixelCount) out[p++] = (b0 << 4) | (b1 >> 4);
+            if (p < pixelCount) out[p++] = ((b1 & 0x0f) << 8) | b2;
+          }
+          return out;
+        }
+
+        // 16-bit (or 10/12-bit stored in 16-bit words)
+        const view = new DataView(payload.buffer, payload.byteOffset, payload.byteLength);
+        const maxWords = Math.min(pixelCount, Math.floor(payload.byteLength / 2));
+        for (let i = 0; i < maxWords; i++) {
+          out[i] = view.getUint16(i * 2, littleEndian);
+        }
+        return out;
+      }
+
+      decodePackBits(payload, pixelCount) {
+        const out = new Uint16Array(pixelCount);
+        let src = 0;
+        let dst = 0;
+        while (src < payload.length && dst < pixelCount) {
+          let n = payload[src++];
+          if (n > 127) n -= 256;
+          if (n >= 0) {
+            const count = n + 1;
+            for (let i = 0; i < count && src < payload.length && dst < pixelCount; i++) {
+              out[dst++] = payload[src++];
+            }
+          } else if (n !== -128) {
+            const count = -n + 1;
+            const val = src < payload.length ? payload[src++] : 0;
+            for (let i = 0; i < count && dst < pixelCount; i++) {
+              out[dst++] = val;
+            }
+          }
+        }
+        return out;
       }
 
       /**
-       * Decodes an IFD into either a single-channel RAW Bayer Uint16Array or an RGB Uint8ClampedArray.
+       * Decodes Kodak DPCM lossless variable-bit-length delta bitstream
+       * used in DCS 200 / 420 / 460 / 520 / 620 / EOS DCS cameras.
        */
-      decodeIfd(ifd) {
-        const encoded = this.extractEncodedData(ifd);
-        const w = ifd.width;
-        const h = ifd.height;
-        const pixelCount = w * h;
-        const bps = ifd.bitsPerSample[0] || 8;
-        const spp = ifd.samplesPerPixel || 1;
-        const comp = ifd.compression || 1;
-
-        // Case A: Standard RGB Image (e.g., IFD0 Thumbnail or already-processed TIFF)
-        if (spp >= 3 && comp === 1) {
-          const rgb = new Uint8ClampedArray(pixelCount * 4);
-          if (bps === 8) {
-            for (let i = 0; i < pixelCount; i++) {
-              const s = i * spp;
-              const d = i * 4;
-              rgb[d] = encoded[s] || 0;
-              rgb[d + 1] = encoded[s + 1] || 0;
-              rgb[d + 2] = encoded[s + 2] || 0;
-              rgb[d + 3] = 255;
-            }
-          } else if (bps === 16) {
-            const dv = new DataView(encoded.buffer, encoded.byteOffset, encoded.byteLength);
-            for (let i = 0; i < pixelCount; i++) {
-              const s = i * spp * 2;
-              const d = i * 4;
-              if (s + 5 < encoded.byteLength) {
-                rgb[d] = dv.getUint16(s, this.littleEndian) >> 8;
-                rgb[d + 1] = dv.getUint16(s + 2, this.littleEndian) >> 8;
-                rgb[d + 2] = dv.getUint16(s + 4, this.littleEndian) >> 8;
-                rgb[d + 3] = 255;
-              }
-            }
-          }
-          return {
-            kind: 'RGB',
-            width: w,
-            height: h,
-            bitsPerSample: bps,
-            rgba: rgb,
-            method: `Uncompressed ${bps}-bit RGB`
-          };
-        }
-
-        // Case B: Single-Channel Sensor RAW (1 sample per pixel)
-        if (spp === 1) {
-          // B1: Uncompressed RAW (Compression = 1)
-          if (comp === 1) {
-            const raw = new Uint16Array(pixelCount);
-            let maxVal = (1 << bps) - 1;
-
-            if (bps === 8) {
-              for (let i = 0; i < pixelCount && i < encoded.length; i++) {
-                raw[i] = encoded[i];
-              }
-            } else if (bps === 10) {
-              // 10-bit packed (4 pixels per 5 bytes)
-              let src = 0;
-              let dst = 0;
-              while (dst + 3 < pixelCount && src + 4 < encoded.length) {
-                const b0 = encoded[src], b1 = encoded[src + 1], b2 = encoded[src + 2], b3 = encoded[src + 3], b4 = encoded[src + 4];
-                if (this.littleEndian) {
-                  raw[dst++] = b0 | ((b1 & 0x03) << 8);
-                  raw[dst++] = (b1 >> 2) | ((b2 & 0x0F) << 6);
-                  raw[dst++] = (b2 >> 4) | ((b3 & 0x3F) << 4);
-                  raw[dst++] = (b3 >> 6) | (b4 << 2);
-                } else {
-                  raw[dst++] = (b0 << 2) | (b1 >> 6);
-                  raw[dst++] = ((b1 & 0x3F) << 4) | (b2 >> 4);
-                  raw[dst++] = ((b2 & 0x0F) << 6) | (b3 >> 2);
-                  raw[dst++] = ((b3 & 0x03) << 8) | b4;
-                }
-                src += 5;
-              }
-            } else if (bps === 12) {
-              // Check if stored in 16-bit container or tightly packed 12-bit (2 pixels per 3 bytes)
-              if (encoded.length >= pixelCount * 2) {
-                const dv = new DataView(encoded.buffer, encoded.byteOffset, encoded.byteLength);
-                for (let i = 0; i < pixelCount; i++) {
-                  raw[i] = dv.getUint16(i * 2, this.littleEndian) & 0x0FFF;
-                }
-              } else {
-                let src = 0;
-                let dst = 0;
-                while (dst + 1 < pixelCount && src + 2 < encoded.length) {
-                  const b0 = encoded[src], b1 = encoded[src + 1], b2 = encoded[src + 2];
-                  if (this.littleEndian) {
-                    raw[dst++] = b0 | ((b1 & 0x0F) << 8);
-                    raw[dst++] = (b1 >> 4) | (b2 << 4);
-                  } else {
-                    raw[dst++] = (b0 << 4) | (b1 >> 4);
-                    raw[dst++] = ((b1 & 0x0F) << 8) | b2;
-                  }
-                  src += 3;
-                }
-              }
-            } else if (bps === 16) {
-              const dv = new DataView(encoded.buffer, encoded.byteOffset, encoded.byteLength);
-              let detectedMax = 0;
-              for (let i = 0; i < pixelCount && (i * 2 + 1) < encoded.length; i++) {
-                const val = dv.getUint16(i * 2, this.littleEndian);
-                raw[i] = val;
-                if (val > detectedMax) detectedMax = val;
-              }
-              // Many Kodak DCS cameras store 12-bit values inside 16-bit words
-              if (detectedMax <= 4095) maxVal = 4095;
-              else if (detectedMax <= 1023) maxVal = 1023;
-            }
-
-            // Apply Kodak linearization curve (Tag 65100) if present
-            const linTable = ifd.tags[65100]?.values;
-            if (linTable && linTable.length >= 256) {
-              let tableMax = 0;
-              for (let i = 0; i < linTable.length; i++) {
-                if (linTable[i] > tableMax) tableMax = linTable[i];
-              }
-              if (tableMax > 0) {
-                for (let i = 0; i < pixelCount; i++) {
-                  const idx = Math.min(linTable.length - 1, raw[i]);
-                  raw[i] = linTable[idx];
-                }
-                maxVal = tableMax;
-              }
-            }
-
-            return {
-              kind: 'RAW',
-              width: w,
-              height: h,
-              bitsPerSample: bps,
-              maxVal,
-              raw,
-              cfaPattern: this.detectCfaPattern(ifd),
-              method: `Uncompressed ${bps}-bit Bayer RAW`
-            };
-          }
-
-          // B2: Kodak Proprietary Lossless DPCM / Variable-Length Delta Compression (Tag 65000, 32867, 34713, 6, 7)
-          if (comp === 65000 || comp === 32867 || comp === 34713 || comp === 6 || comp === 7) {
-            const decodedRaw = this.decodeKodakDPCM(encoded, w, h, bps, ifd);
-            return {
-              kind: 'RAW',
-              width: w,
-              height: h,
-              bitsPerSample: bps,
-              maxVal: decodedRaw.maxVal,
-              raw: decodedRaw.raw,
-              cfaPattern: this.detectCfaPattern(ifd),
-              method: `Kodak DPCM Lossless RAW (Comp ${comp})`
-            };
-          }
-        }
-
-        throw new Error(`Unsupported image format combination: Compression=${comp}, SamplesPerPixel=${spp}, BitsPerSample=${bps}`);
-      }
-
-      /**
-       * Decodes Kodak DCS variable-bitlength DPCM / predictive delta streams (used in DCS 420, 460, 520, 560, 620, 760).
-       * Implements Kodak's nibble-header 2-pixel block DPCM & bit-stream predictor fallback.
-       */
-      decodeKodakDPCM(encoded, width, height, bps, ifd) {
-        const pixelCount = width * height;
-        const raw = new Uint16Array(pixelCount);
-
-        // Bit reader helper (MSB-first bitstream used by Kodak DCS DPCM)
-        let bytePos = 0;
+      decodeKodakDpcm(payload, width, height, bitsPerSample) {
+        const out = new Uint16Array(width * height);
+        const maxClamp = bitsPerSample > 8 ? 1023 : 255;
         let bitBuffer = 0;
-        let bitsInBuffer = 0;
+        let bitsInBuf = 0;
+        let bytePos = 0;
 
         const readBits = (n) => {
-          while (bitsInBuffer < n) {
-            if (bytePos >= encoded.length) return 0;
-            bitBuffer = (bitBuffer << 8) | encoded[bytePos++];
-            bitsInBuffer += 8;
+          while (bitsInBuf < n) {
+            const nextByte = bytePos < payload.length ? payload[bytePos++] : 0;
+            bitBuffer = (bitBuffer << 8) | nextByte;
+            bitsInBuf += 8;
           }
-          bitsInBuffer -= n;
-          return (bitBuffer >>> bitsInBuffer) & ((1 << n) - 1);
+          bitsInBuf -= n;
+          return (bitBuffer >>> bitsInBuf) & ((1 << n) - 1);
         };
-
-        const alignByte = () => {
-          bitsInBuffer = 0;
-          bitBuffer = 0;
-        };
-
-        // Kodak 65000 / DCS DPCM processes rows in pairs of horizontal same-color pixels (step of 2)
-        // Each block of 2 pixels starts with an 8-bit header giving bit-lengths (len0, len1) for the two deltas.
-        const effectiveBits = bps > 8 ? 12 : 8;
-        const defaultPred = 1 << (effectiveBits - 1);
-        let maxDetected = 0;
 
         for (let row = 0; row < height; row++) {
-          const rowStart = row * width;
-          // Kodak DCS resets horizontal predictors at the start of every scanline
-          let predEven = defaultPred;
-          let predOdd = defaultPred;
+          const rowOffset = row * width;
+          let predEven = 512;
+          let predOdd = 512;
 
           for (let col = 0; col < width; col += 2) {
-            if (bytePos >= encoded.length && bitsInBuffer === 0) break;
-
+            // Each pixel pair starts with two 4-bit length descriptors
             const len0 = readBits(4);
             const len1 = readBits(4);
 
-            // Decode delta 0 (even column)
             let diff0 = 0;
-            if (len0 > 0 && len0 <= 14) {
-              const rawBits0 = readBits(len0);
-              const signBit0 = 1 << (len0 - 1);
-              diff0 = (rawBits0 & signBit0) ? rawBits0 : (rawBits0 - (1 << len0) + 1);
+            if (len0 > 0) {
+              diff0 = readBits(len0);
+              if ((diff0 & (1 << (len0 - 1))) === 0) {
+                diff0 -= (1 << len0) - 1;
+              }
             }
 
-            // Decode delta 1 (odd column)
             let diff1 = 0;
-            if (len1 > 0 && len1 <= 14) {
-              const rawBits1 = readBits(len1);
-              const signBit1 = 1 << (len1 - 1);
-              diff1 = (rawBits1 & signBit1) ? rawBits1 : (rawBits1 - (1 << len1) + 1);
+            if (len1 > 0) {
+              diff1 = readBits(len1);
+              if ((diff1 & (1 << (len1 - 1))) === 0) {
+                diff1 -= (1 << len1) - 1;
+              }
             }
 
-            const val0 = Math.max(0, Math.min(4095, predEven + diff0));
-            predEven = val0;
-            raw[rowStart + col] = val0;
-            if (val0 > maxDetected) maxDetected = val0;
+            predEven = Math.max(0, Math.min(maxClamp, predEven + diff0));
+            out[rowOffset + col] = predEven;
 
             if (col + 1 < width) {
-              const val1 = Math.max(0, Math.min(4095, predOdd + diff1));
-              predOdd = val1;
-              raw[rowStart + col + 1] = val1;
-              if (val1 > maxDetected) maxDetected = val1;
+              predOdd = Math.max(0, Math.min(maxClamp, predOdd + diff1));
+              out[rowOffset + col + 1] = predOdd;
             }
           }
-          // Kodak DCS pads each scanline to a 16-bit or 8-bit boundary depending on model
-          if (bitsInBuffer > 0) alignByte();
         }
 
-        // Apply Kodak Linearization Table (Tag 65100) if embedded
-        const linTable = ifd.tags[65100]?.values;
-        let maxVal = maxDetected > 255 ? 4095 : 255;
-        if (linTable && linTable.length >= 256) {
-          let tMax = 0;
-          for (let i = 0; i < linTable.length; i++) if (linTable[i] > tMax) tMax = linTable[i];
-          if (tMax > 0) {
-            for (let i = 0; i < pixelCount; i++) {
-              raw[i] = linTable[Math.min(linTable.length - 1, raw[i])];
-            }
-            maxVal = tMax;
-          }
-        }
-
-        return { raw, maxVal };
-      }
-
-      /**
-       * Determines the 2x2 Bayer CFA pattern from Tag 33422 or Kodak camera model heuristics.
-       */
-      detectCfaPattern(ifd) {
-        const cfaTag = ifd.tags[33422]?.values;
-        if (cfaTag && cfaTag.length >= 4) {
-          const map = ['R', 'G', 'B'];
-          const pat = cfaTag.slice(0, 4).map(v => map[v] || 'G').join('');
-          if (['RGGB', 'GRBG', 'GBRG', 'BGGR'].includes(pat)) {
-            return pat;
-          }
-        }
-
-        // Check camera model string in IFD0
-        const ifd0 = this.meta.ifds[0];
-        const model = (ifd0?.tags[272]?.values?.[0] || '').toUpperCase();
-        if (model.includes('420M') || model.includes('460M') || model.includes('MONO')) {
-          return 'MONO';
-        }
-        if (model.includes('DCS 420') || model.includes('DCS 460') || model.includes('DCS 520') || model.includes('DCS 620')) {
-          return 'GRBG';
-        }
-        return 'RGGB';
+        return out;
       }
     }
 
     // =========================================================================
-    // 7. BAYER DEMOSAICING & RAW COLOR PIPELINE
+    // 3. BAYER DEMOSAICING & RAW DARKROOM COLOR PIPELINE
     // =========================================================================
     class RawDeveloper {
-      /**
-       * Renders a decoded RAW or RGB image object onto a target ImageData buffer.
-       */
-      static render(decoded, viewMode, params) {
-        const w = decoded.width;
-        const h = decoded.height;
-        const imgData = new ImageData(w, h);
-        const out = imgData.data;
-
-        if (decoded.kind === 'RGB') {
-          out.set(decoded.rgba);
-          return imgData;
+      static getColorMatrix(profile) {
+        switch (profile) {
+          case 'vivid': // Kodak Ektachrome Vivid Boost
+            return [
+              1.38, -0.26, -0.12,
+              -0.14, 1.28, -0.14,
+              -0.06, -0.24, 1.30
+            ];
+          case 'kodachrome':
+            return [
+              1.30, -0.18, -0.12,
+              -0.10, 1.18, -0.08,
+              -0.08, -0.16, 1.24
+            ];
+          case 'neutral':
+            return [
+              1.15, -0.10, -0.05,
+              -0.06, 1.12, -0.06,
+              -0.04, -0.10, 1.14
+            ];
+          default:
+            return [1, 0, 0, 0, 1, 0, 0, 0, 1];
         }
+      }
 
-        const raw = decoded.raw;
-        const maxVal = Math.max(1, decoded.maxVal);
-        const black = params.blackLevel;
-        const scale = 1.0 / Math.max(1, maxVal - black);
-        const cfa = params.cfaPattern || 'GRBG';
+      static render(decoded, viewMode, params) {
+        const { width, height } = decoded;
+        const imgData = new ImageData(width, height);
+        const dst = imgData.data;
 
-        // Raw CFA Grayscale/Mosaic inspection mode
-        if (viewMode === 'raw' || cfa === 'MONO') {
-          const evMult = Math.pow(2, params.exposure);
-          const invGamma = 1.0 / params.gamma;
-          for (let i = 0; i < w * h; i++) {
-            let v = Math.max(0, (raw[i] - black) * scale) * evMult;
-            v = Math.pow(Math.min(1, v), invGamma);
-            v = (v - 0.5) * params.contrast + 0.5;
-            const byte = Math.max(0, Math.min(255, (v * 255) | 0));
-            const idx = i * 4;
-            out[idx] = byte;
-            out[idx + 1] = byte;
-            out[idx + 2] = byte;
-            out[idx + 3] = 255;
+        if (decoded.isRgb && decoded.rgbData) {
+          const src = decoded.rgbData;
+          for (let i = 0, p = 0; i < width * height; i++, p += 3) {
+            dst[i * 4] = src[p];
+            dst[i * 4 + 1] = src[p + 1];
+            dst[i * 4 + 2] = src[p + 2];
+            dst[i * 4 + 3] = 255;
           }
           return imgData;
         }
 
-        // Normalize linear sensor values into Float32Array [0..1+] with Black Level & White Balance pre-applied
-        const linear = new Float32Array(w * h);
-        const evMult = Math.pow(2, params.exposure);
-        const rMult = params.redGain * evMult;
-        const gMult = 1.0 * evMult;
-        const bMult = params.blueGain * evMult;
+        const raw = decoded.rawData;
+        const maxVal = decoded.maxVal || 1023;
+        const scale10 = maxVal / 1023;
+        const black = params.blackLevel * scale10;
+        const normRange = Math.max(1, maxVal - black);
+        const evMult = Math.pow(2, params.exposure || 0);
+        const rGain = params.redGain;
+        const bGain = params.blueGain;
 
-        const cfaOffsets = {
-          RGGB: [0, 1, 1, 2],
+        // Pre-normalize & apply black pedestal + channel gains
+        const lin = new Float32Array(width * height);
+        const pattern = params.cfaPattern || 'GRBG';
+
+        // Map (row & 1, col & 1) to channel index: 0 = R, 1 = G, 2 = B
+        const cfaMap = {
           GRBG: [1, 0, 2, 1],
+          RGGB: [0, 1, 1, 2],
           GBRG: [1, 2, 0, 1],
           BGGR: [2, 1, 1, 0]
-        }[cfa] || [1, 0, 2, 1];
+        }[pattern] || [1, 0, 2, 1];
 
-        for (let y = 0; y < h; y++) {
-          const rowOff = y * w;
-          const rShift = (y & 1) << 1;
-          for (let x = 0; x < w; x++) {
-            const ch = cfaOffsets[rShift | (x & 1)];
-            const gain = ch === 0 ? rMult : (ch === 2 ? bMult : gMult);
-            const norm = Math.max(0, (raw[rowOff + x] - black) * scale);
-            linear[rowOff + x] = norm * gain;
+        for (let y = 0; y < height; y++) {
+          const rowOff = y * width;
+          const rBit = (y & 1) << 1;
+          for (let x = 0; x < width; x++) {
+            const idx = rowOff + x;
+            let v = (raw[idx] - black) / normRange;
+            if (v < 0) v = 0;
+            v *= evMult;
+
+            if (pattern !== 'MONOCHROME') {
+              const ch = cfaMap[rBit | (x & 1)];
+              if (ch === 0) v *= rGain;
+              else if (ch === 2) v *= bGain;
+            }
+            lin[idx] = v;
           }
         }
 
-        // Color correction matrices
-        const matrices = {
-          vivid: [
-             1.68, -0.48, -0.20,
-            -0.24,  1.45, -0.21,
-            -0.10, -0.46,  1.56
-          ],
-          kodak_ccd: [
-             1.45, -0.32, -0.13,
-            -0.18,  1.32, -0.14,
-            -0.06, -0.34,  1.40
-          ],
-          kodachrome: [
-             1.56, -0.36, -0.20,
-            -0.20,  1.36, -0.16,
-            -0.08, -0.30,  1.38
-          ],
-          neutral: [
-            1, 0, 0,
-            0, 1, 0,
-            0, 0, 1
-          ]
-        };
-        const m = matrices[params.colorMatrix] || matrices.vivid;
-        const invGamma = 1.0 / params.gamma;
-        const contrast = params.contrast;
-        const useMalvar = params.demosaic === 'malvar';
+        const ccm = this.getColorMatrix(params.colorMatrix);
+        const invGamma = 1 / (params.gamma || 2.2);
+        const contrast = params.contrast || 1.10;
 
-        // Helper for safe boundary clamping
+        // Build fast 4096-entry tone curve LUT (gamma + midtone S-curve contrast)
+        const lutSize = 4096;
+        const toneLut = new Uint8ClampedArray(lutSize + 1);
+        for (let i = 0; i <= lutSize; i++) {
+          let x = i / lutSize;
+          // Gamma encoding
+          x = Math.pow(Math.min(1, Math.max(0, x)), invGamma);
+          // Contrast around 0.5 mid-gray
+          x = (x - 0.5) * contrast + 0.5;
+          toneLut[i] = Math.round(Math.min(1, Math.max(0, x)) * 255);
+        }
+
         const at = (x, y) => {
-          const cx = x < 0 ? 0 : (x >= w ? w - 1 : x);
-          const cy = y < 0 ? 0 : (y >= h ? h - 1 : y);
-          return linear[cy * w + cx];
+          const cx = x < 0 ? -x : (x >= width ? 2 * width - x - 2 : x);
+          const cy = y < 0 ? -y : (y >= height ? 2 * height - y - 2 : y);
+          return lin[Math.max(0, Math.min(height - 1, cy)) * width + Math.max(0, Math.min(width - 1, cx))];
         };
 
-        for (let y = 0; y < h; y++) {
-          const rShift = (y & 1) << 1;
-          const rowOff = y * w;
+        for (let y = 0; y < height; y++) {
+          const rowOff = y * width;
+          const rBit = (y & 1) << 1;
 
-          for (let x = 0; x < w; x++) {
+          for (let x = 0; x < width; x++) {
             const idx = rowOff + x;
-            const ch = cfaOffsets[rShift | (x & 1)]; // 0=R, 1=G, 2=B
-            let r = 0, g = 0, b = 0;
+            let r, g, b;
 
-            if (!useMalvar || x < 2 || y < 2 || x >= w - 2 || y >= h - 2) {
-              // Bilinear Bayer Interpolation
-              if (ch === 0) {
-                // At Red pixel
-                r = at(x, y);
-                g = 0.25 * (at(x - 1, y) + at(x + 1, y) + at(x, y - 1) + at(x, y + 1));
-                b = 0.25 * (at(x - 1, y - 1) + at(x + 1, y - 1) + at(x - 1, y + 1) + at(x + 1, y + 1));
-              } else if (ch === 2) {
-                // At Blue pixel
-                r = 0.25 * (at(x - 1, y - 1) + at(x + 1, y - 1) + at(x - 1, y + 1) + at(x + 1, y + 1));
-                g = 0.25 * (at(x - 1, y) + at(x + 1, y) + at(x, y - 1) + at(x, y + 1));
-                b = at(x, y);
-              } else {
-                // At Green pixel: check whether neighbors on same row are Red or Blue
-                const leftCh = cfaOffsets[rShift | ((x - 1) & 1)];
-                g = at(x, y);
-                if (leftCh === 0) {
-                  r = 0.5 * (at(x - 1, y) + at(x + 1, y));
-                  b = 0.5 * (at(x, y - 1) + at(x, y + 1));
-                } else {
-                  r = 0.5 * (at(x, y - 1) + at(x, y + 1));
-                  b = 0.5 * (at(x - 1, y) + at(x + 1, y));
-                }
-              }
+            if (pattern === 'MONOCHROME') {
+              r = g = b = lin[idx];
             } else {
-              // Malvar-He-Cutler 5x5 Gradient-Corrected Linear Interpolation
-              const C = linear[idx];
-              const N = linear[idx - w], S = linear[idx + w], W = linear[idx - 1], E = linear[idx + 1];
-              const N2 = linear[idx - 2 * w], S2 = linear[idx + 2 * w], W2 = linear[idx - 2], E2 = linear[idx + 2];
-              const NW = linear[idx - w - 1], NE = linear[idx - w + 1], SW = linear[idx + w - 1], SE = linear[idx + w + 1];
+              const ch = cfaMap[rBit | (x & 1)];
+              const center = lin[idx];
 
-              if (ch === 0) {
-                // Red center
-                r = C;
-                g = (4 * C + 2 * (N + S + W + E) - (N2 + S2 + W2 + E2)) * 0.125;
-                b = (6 * C + 2 * (NW + NE + SW + SE) - 1.5 * (N2 + S2 + W2 + E2)) * 0.125;
-              } else if (ch === 2) {
-                // Blue center
-                b = C;
-                g = (4 * C + 2 * (N + S + W + E) - (N2 + S2 + W2 + E2)) * 0.125;
-                r = (6 * C + 2 * (NW + NE + SW + SE) - 1.5 * (N2 + S2 + W2 + E2)) * 0.125;
-              } else {
-                // Green center
-                g = C;
-                const leftCh = cfaOffsets[rShift | ((x - 1) & 1)];
-                const horiz = (5 * C + 4 * (W + E) - (NW + NE + SW + SE + W2 + E2) + 0.5 * (N2 + S2)) * 0.125;
-                const vert  = (5 * C + 4 * (N + S) - (NW + NE + SW + SE + N2 + S2) + 0.5 * (W2 + E2)) * 0.125;
+              if (ch === 1) {
+                // Green pixel
+                g = center;
+                const leftCh = cfaMap[rBit | ((x - 1) & 1)];
+                const horiz = 0.5 * (at(x - 1, y) + at(x + 1, y));
+                const vert = 0.5 * (at(x, y - 1) + at(x, y + 1));
                 if (leftCh === 0) {
                   r = horiz;
                   b = vert;
                 } else {
-                  r = vert;
                   b = horiz;
+                  r = vert;
                 }
+              } else if (ch === 0) {
+                // Red pixel (Malvar-He-Cutler gradient-corrected green)
+                r = center;
+                const gCross = 0.25 * (at(x - 1, y) + at(x + 1, y) + at(x, y - 1) + at(x, y + 1));
+                const lapR = center - 0.25 * (at(x - 2, y) + at(x + 2, y) + at(x, y - 2) + at(x, y + 2));
+                g = gCross + 0.5 * lapR;
+                b = 0.25 * (at(x - 1, y - 1) + at(x + 1, y - 1) + at(x - 1, y + 1) + at(x + 1, y + 1));
+              } else {
+                // Blue pixel (Malvar-He-Cutler gradient-corrected green)
+                b = center;
+                const gCross = 0.25 * (at(x - 1, y) + at(x + 1, y) + at(x, y - 1) + at(x, y + 1));
+                const lapB = center - 0.25 * (at(x - 2, y) + at(x + 2, y) + at(x, y - 2) + at(x, y + 2));
+                g = gCross + 0.5 * lapB;
+                r = 0.25 * (at(x - 1, y - 1) + at(x + 1, y - 1) + at(x - 1, y + 1) + at(x + 1, y + 1));
               }
             }
 
-            // Apply 3x3 Color Matrix
-            let mr = m[0] * r + m[1] * g + m[2] * b;
-            let mg = m[3] * r + m[4] * g + m[5] * b;
-            let mb = m[6] * r + m[7] * g + m[8] * b;
-
-            // Clamp linear [0, 1] with soft highlight roll-off
-            mr = mr <= 0 ? 0 : (mr >= 1 ? 1 : mr);
-            mg = mg <= 0 ? 0 : (mg >= 1 ? 1 : mg);
-            mb = mb <= 0 ? 0 : (mb >= 1 ? 1 : mb);
-
-            // Gamma encoding + Contrast S-curve
-            mr = (Math.pow(mr, invGamma) - 0.5) * contrast + 0.5;
-            mg = (Math.pow(mg, invGamma) - 0.5) * contrast + 0.5;
-            mb = (Math.pow(mb, invGamma) - 0.5) * contrast + 0.5;
+            // Apply 3x3 Color Correction Matrix
+            const cr = Math.max(0, Math.min(1, ccm[0] * r + ccm[1] * g + ccm[2] * b));
+            const cg = Math.max(0, Math.min(1, ccm[3] * r + ccm[4] * g + ccm[5] * b));
+            const cb = Math.max(0, Math.min(1, ccm[6] * r + ccm[7] * g + ccm[8] * b));
 
             const outIdx = idx * 4;
-            out[outIdx]     = mr <= 0 ? 0 : (mr >= 1 ? 255 : (mr * 255) | 0);
-            out[outIdx + 1] = mg <= 0 ? 0 : (mg >= 1 ? 255 : (mg * 255) | 0);
-            out[outIdx + 2] = mb <= 0 ? 0 : (mb >= 1 ? 255 : (mb * 255) | 0);
-            out[outIdx + 3] = 255;
+            dst[outIdx] = toneLut[(cr * lutSize) | 0];
+            dst[outIdx + 1] = toneLut[(cg * lutSize) | 0];
+            dst[outIdx + 2] = toneLut[(cb * lutSize) | 0];
+            dst[outIdx + 3] = 255;
           }
         }
 
@@ -1461,7 +950,112 @@
     }
 
     // =========================================================================
-    // 8. FILE INGESTION & UI RENDERING CONTROLLER
+    // 4. APPLICATION STATE & 7300K WHITE BALANCE CURVE
+    // =========================================================================
+    const DEFAULT_PARAMS = {
+      cfaPattern: 'GRBG',
+      demosaic: 'malvar',
+      exposure: 0.0,
+      tempOffset: 0,       // -50 (Colder) to +50 (Warmer), 0 = 7300K neutral
+      redGain: 1.40,       // 7300K neutral R gain
+      blueGain: 2.20,      // 7300K neutral B gain
+      blackLevel: 80,      // Default black pedestal
+      contrast: 1.60,      // Default tone contrast
+      gamma: 2.20,
+      colorMatrix: 'vivid' // Kodak Ektachrome Vivid Boost
+    };
+
+    /**
+     * Computes Red and Blue gains anchored at 7300K neutral (temp = 0 -> R 1.40x, B 2.20x).
+     * Sliding colder (< 0) decreases R toward 0.90x and increases B toward 2.80x.
+     * Sliding warmer (> 0) increases R toward 2.10x and decreases B toward 1.40x.
+     */
+    function computeGainsFromTemp(tempOffset) {
+      const t = Math.max(-50, Math.min(50, tempOffset));
+      let rGain, bGain;
+      if (t <= 0) {
+        const ratio = Math.abs(t) / 50; // 0 at neutral, 1 at coldest (-50)
+        rGain = 1.40 - ratio * 0.50;    // 1.40 -> 0.90
+        bGain = 2.20 + ratio * 0.60;    // 2.20 -> 2.80
+      } else {
+        const ratio = t / 50;           // 0 at neutral, 1 at warmest (+50)
+        rGain = 1.40 + ratio * 0.70;    // 1.40 -> 2.10
+        bGain = 2.20 - ratio * 0.80;    // 2.20 -> 1.40
+      }
+      return {
+        redGain: Number(rGain.toFixed(2)),
+        blueGain: Number(bGain.toFixed(2))
+      };
+    }
+
+    const state = {
+      files: [],           // Array of parsed file records
+      activeIndex: -1,
+      viewMode: 'developed',
+      zoomMode: 'fit',     // 'fit' | '100'
+      params: { ...DEFAULT_PARAMS },
+      cachedPngFile: null, // Pre-generated File object for synchronous iOS navigator.share()
+      cachedPngBlob: null,
+      cacheJobId: 0
+    };
+
+    // =========================================================================
+    // 5. DOM REFERENCES
+    // =========================================================================
+    const els = {
+      fileInput: document.getElementById('fileInput'),
+      btnSelectFiles: document.getElementById('btnSelectFiles'),
+      btnShareOrSave: document.getElementById('btnShareOrSave'),
+      shareBtnLabel: document.getElementById('shareBtnLabel'),
+      btnShareMain: document.getElementById('btnShareMain'),
+      shareMainLabel: document.getElementById('shareMainLabel'),
+      btnDirectDownload: document.getElementById('btnDirectDownload'),
+      btnLoadDemoDcs: document.getElementById('btnLoadDemoDcs'),
+      statusBanner: document.getElementById('statusBanner'),
+      statusBadge: document.getElementById('statusBadge'),
+      statusText: document.getElementById('statusText'),
+      btnDismissStatus: document.getElementById('btnDismissStatus'),
+      fileQueueBar: document.getElementById('fileQueueBar'),
+      fileQueueList: document.getElementById('fileQueueList'),
+      activeFileName: document.getElementById('activeFileName'),
+      statResolution: document.getElementById('statResolution'),
+      viewportContainer: document.getElementById('viewportContainer'),
+      emptyDropzone: document.getElementById('emptyDropzone'),
+      dragOverlay: document.getElementById('dragOverlay'),
+      previewCanvas: document.getElementById('previewCanvas'),
+      btnZoomFit: document.getElementById('btnZoomFit'),
+      btnZoom100: document.getElementById('btnZoom100'),
+      btnResetParams: document.getElementById('btnResetParams'),
+      sliderTemp: document.getElementById('sliderTemp'),
+      valTemp: document.getElementById('valTemp'),
+      sliderBlackLevel: document.getElementById('sliderBlackLevel'),
+      valBlackLevel: document.getElementById('valBlackLevel'),
+      sliderContrast: document.getElementById('sliderContrast'),
+      valContrast: document.getElementById('valContrast')
+    };
+
+    // =========================================================================
+    // 6. STATUS / TOAST HELPER
+    // =========================================================================
+    function showStatus(level, message) {
+      els.statusBadge.textContent = level;
+      els.statusText.textContent = message;
+      els.statusBanner.classList.remove('hidden');
+      if (level === 'ERROR') {
+        els.statusBadge.className = 'px-1.5 py-0.5 rounded font-mono font-semibold text-[10px] uppercase bg-red-500/20 text-red-400 shrink-0';
+      } else if (level === 'WARN') {
+        els.statusBadge.className = 'px-1.5 py-0.5 rounded font-mono font-semibold text-[10px] uppercase bg-amber-500/20 text-amber-300 shrink-0';
+      } else {
+        els.statusBadge.className = 'px-1.5 py-0.5 rounded font-mono font-semibold text-[10px] uppercase bg-kodak-yellow/20 text-kodak-yellow shrink-0';
+      }
+    }
+
+    els.btnDismissStatus.addEventListener('click', () => {
+      els.statusBanner.classList.add('hidden');
+    });
+
+    // =========================================================================
+    // 7. FILE INGESTION & UI RENDERING CONTROLLER
     // =========================================================================
     async function handleFiles(fileList) {
       if (!fileList || fileList.length === 0) return;
@@ -1497,7 +1091,7 @@
           thumbDecoded = decoder.decodeIfd(thumbnailIfd);
           primaryDecoded = thumbDecoded;
           isFallbackToThumbnail = true;
-          showStatus('WARN', `${fileName}: Full RAW stream (${primaryRawIfd.compression}) could not be decoded (${rawErr.message}); fell back to embedded IFD0 preview.`);
+          showStatus('WARN', `${fileName}: Fell back to embedded preview (${rawErr.message}).`);
         } else {
           throw rawErr;
         }
@@ -1524,31 +1118,18 @@
 
       state.files.push(record);
       renderQueueBar();
-
       if (!isFallbackToThumbnail) {
-        const subNote = primaryRawIfd.label.includes('SubIFD')
-          ? `Extracted full-res sensor stream from ${primaryRawIfd.label} (${primaryDecoded.width}×${primaryDecoded.height})`
-          : `Decoded ${primaryDecoded.width}×${primaryDecoded.height} (${primaryDecoded.method})`;
-        showStatus('READY', `${fileName}: ${subNote}`);
+        els.statusBanner.classList.add('hidden');
       }
     }
 
     function renderQueueBar() {
-      if (state.files.length === 0) {
+      if (state.files.length <= 1) {
         els.fileQueueBar.classList.add('hidden');
-        els.btnBatchDownload.classList.add('hidden');
         return;
       }
 
       els.fileQueueBar.classList.remove('hidden');
-      if (state.files.length > 1) {
-        els.btnBatchDownload.classList.remove('hidden');
-        els.btnBatchDownload.classList.add('inline-flex');
-        els.batchBtnLabel.textContent = `Download All (${state.files.length})`;
-      } else {
-        els.btnBatchDownload.classList.add('hidden');
-      }
-
       els.fileQueueList.innerHTML = '';
       state.files.forEach((f, idx) => {
         const btn = document.createElement('button');
@@ -1559,7 +1140,7 @@
             ? 'bg-kodak-yellow text-black border-kodak-yellow font-semibold'
             : 'bg-kodak-card text-slate-300 border-kodak-border hover:border-slate-500'
         }`;
-        btn.innerHTML = `<span>${escapeHtml(f.name)}</span><span class="opacity-75 text-[10px]">${f.primaryDecoded.width}×${f.primaryDecoded.height}</span>`;
+        btn.innerHTML = `<span>${escapeHtml(f.name)}</span>`;
         btn.addEventListener('click', () => selectFile(idx));
         els.fileQueueList.appendChild(btn);
       });
@@ -1573,43 +1154,19 @@
       renderQueueBar();
       els.emptyDropzone.classList.add('hidden');
       els.previewCanvas.classList.remove('hidden');
-      els.btnDownloadPng.disabled = false;
+      els.btnShareOrSave.disabled = false;
+      els.btnShareMain.disabled = false;
+      els.btnDirectDownload.disabled = false;
 
       els.activeFileName.textContent = rec.name;
-      els.streamSourceBadge.classList.remove('hidden');
-      if (rec.isFallbackToThumbnail) {
-        els.streamSourceBadge.textContent = 'Embedded Preview Fallback';
-        els.streamSourceBadge.className = 'px-2 py-0.5 rounded-md font-mono text-[11px] bg-amber-500/15 text-amber-300 border border-amber-500/30 shrink-0';
-      } else if (rec.primaryDecoded.kind === 'RAW') {
-        els.streamSourceBadge.textContent = `Full RAW (${rec.primaryRawIfd.label})`;
-        els.streamSourceBadge.className = 'px-2 py-0.5 rounded-md font-mono text-[11px] bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shrink-0';
-      } else {
-        els.streamSourceBadge.textContent = `RGB TIFF (${rec.primaryRawIfd.label})`;
-        els.streamSourceBadge.className = 'px-2 py-0.5 rounded-md font-mono text-[11px] bg-sky-500/15 text-sky-300 border border-sky-500/30 shrink-0';
-      }
-
-      // Update detected CFA hint
-      // Update active CFA readout in inspector
-      els.metaCfa.textContent = rec.primaryDecoded.kind === 'RAW' ? state.params.cfaPattern : 'RGB / Direct';
-
-      // Populate Metadata & IFD Inspector
-      populateInspector(rec);
-
-      // Render active canvas
       renderActiveCanvas();
     }
 
     function renderActiveCanvas() {
       if (state.activeIndex < 0) return;
       const rec = state.files[state.activeIndex];
-      const t0 = performance.now();
 
-      let targetDecoded = rec.primaryDecoded;
-      if (state.viewMode === 'thumbnail' && rec.thumbDecoded) {
-        targetDecoded = rec.thumbDecoded;
-      }
-
-      const imgData = RawDeveloper.render(targetDecoded, state.viewMode, state.params);
+      const imgData = RawDeveloper.render(rec.primaryDecoded, 'developed', state.params);
       const canvas = els.previewCanvas;
       canvas.width = imgData.width;
       canvas.height = imgData.height;
@@ -1617,12 +1174,24 @@
       ctx.putImageData(imgData, 0, 0);
 
       applyZoomStyle();
+      els.statResolution.textContent = `${imgData.width} × ${imgData.height}`;
 
-      const elapsed = (performance.now() - t0).toFixed(1);
-      els.statResolution.textContent = `Resolution: ${imgData.width} × ${imgData.height} px`;
-      els.statBitDepth.textContent = `Depth: ${targetDecoded.bitsPerSample}-bit ${targetDecoded.kind}`;
-      els.statCompression.textContent = `Stream: ${targetDecoded.method}`;
-      els.statRenderTime.textContent = `Demosaiced in ${elapsed} ms`;
+      // Pre-encode PNG File in the background so iOS navigator.share() can fire synchronously on button tap
+      prepareCachedPngFile(rec.name, canvas);
+    }
+
+    function prepareCachedPngFile(originalName, canvas) {
+      const jobId = ++state.cacheJobId;
+      const pngName = `${originalName.replace(/\.[^/.]+$/, '')}.png`;
+      canvas.toBlob((blob) => {
+        if (!blob || jobId !== state.cacheJobId) return;
+        state.cachedPngBlob = blob;
+        try {
+          state.cachedPngFile = new File([blob], pngName, { type: 'image/png' });
+        } catch (_) {
+          state.cachedPngFile = null;
+        }
+      }, 'image/png');
     }
 
     function applyZoomStyle() {
@@ -1643,108 +1212,42 @@
     }
 
     // =========================================================================
-    // 9. METADATA & IFD INSPECTOR RENDERING
+    // 8. iOS NATIVE SHARE SHEET & PNG DOWNLOAD HANDLERS
     // =========================================================================
-    function populateInspector(rec) {
-      const meta = rec.parsedMeta;
-      const ifd0 = meta.ifds[0];
-      const make = ifd0?.tags[271]?.values?.[0] || '';
-      const model = ifd0?.tags[272]?.values?.[0] || 'Unknown Kodak DCS';
+    function handleShareOrSave() {
+      if (state.activeIndex < 0) return;
+      const rec = state.files[state.activeIndex];
+      const pngName = `${rec.name.replace(/\.[^/.]+$/, '')}.png`;
 
-      els.metaModel.textContent = `${make} ${model}`.trim();
-      els.metaEndian.textContent = `${meta.littleEndian ? 'Little-Endian (II)' : 'Big-Endian (MM)'} / v${meta.magic}`;
-      els.metaCfa.textContent = rec.primaryDecoded.kind === 'RAW' ? state.params.cfaPattern : 'RGB / Direct';
-
-      if (rec.thumbnailIfd && rec.primaryRawIfd) {
-        els.metaIfdRatio.textContent = `${rec.thumbnailIfd.width}×${rec.thumbnailIfd.height} → ${rec.primaryRawIfd.width}×${rec.primaryRawIfd.height}`;
-      } else {
-        els.metaIfdRatio.textContent = `${rec.primaryRawIfd.width}×${rec.primaryRawIfd.height} (Single IFD)`;
-      }
-
-      if (meta.kodakAsciiNotes.length > 0) {
-        els.kodakNotesBox.classList.remove('hidden');
-        els.kodakNotesBox.textContent = `Embedded Kodak ASCII Header Notes:\n${meta.kodakAsciiNotes.join('\n')}`;
-      } else {
-        els.kodakNotesBox.classList.add('hidden');
-      }
-
-      // Populate IFD filter dropdown
-      els.ifdSelector.innerHTML = `<option value="all">All Parsed IFDs (${meta.ifds.length})</option>`;
-      meta.ifds.forEach(ifd => {
-        const opt = document.createElement('option');
-        opt.value = ifd.label;
-        opt.textContent = `${ifd.label} (${ifd.width || '?'}×${ifd.height || '?'})`;
-        els.ifdSelector.appendChild(opt);
-      });
-
-      renderIfdTagTable(rec, 'all');
-    }
-
-    function renderIfdTagTable(rec, filterLabel) {
-      const rows = [];
-      rec.parsedMeta.ifds.forEach(ifd => {
-        if (filterLabel !== 'all' && ifd.label !== filterLabel) return;
-        ifd.tagList.forEach(tag => {
-          let valStr = '';
-          if (tag.id === 259 && tag.values.length > 0) {
-            valStr = COMPRESSION_NAMES[tag.values[0]] || `${tag.values[0]}`;
-          } else if (tag.values.length > 8) {
-            valStr = `[${tag.values.slice(0, 6).join(', ')}, ... (${tag.count} items)]`;
-          } else {
-            valStr = tag.values.join(', ');
+      if (state.cachedPngFile && navigator.canShare && navigator.canShare({ files: [state.cachedPngFile] })) {
+        navigator.share({
+          files: [state.cachedPngFile],
+          title: pngName
+        }).catch((err) => {
+          if (err && err.name !== 'AbortError') {
+            downloadCurrentPng();
           }
-
-          rows.push(`
-            <tr class="hover:bg-kodak-card/50 transition">
-              <td class="py-1.5 px-3 text-kodak-yellow whitespace-nowrap">${escapeHtml(ifd.label)}</td>
-              <td class="py-1.5 px-3 text-slate-400 whitespace-nowrap">${tag.id} (0x${tag.id.toString(16).toUpperCase().padStart(4, '0')})</td>
-              <td class="py-1.5 px-3 text-white whitespace-nowrap">${escapeHtml(tag.name)}</td>
-              <td class="py-1.5 px-3 text-slate-400 whitespace-nowrap">${tag.typeName} × ${tag.count}</td>
-              <td class="py-1.5 px-3 text-slate-200 break-all">${escapeHtml(valStr)}</td>
-            </tr>
-          `);
         });
-      });
+        return;
+      }
 
-      els.ifdTableBody.innerHTML = rows.join('') || `<tr><td colspan="5" class="py-4 text-center text-slate-500">No tags in selected IFD</td></tr>`;
+      downloadCurrentPng();
     }
 
-    // =========================================================================
-    // 10. PNG EXPORT (SINGLE & BATCH)
-    // =========================================================================
     function downloadCurrentPng() {
       if (state.activeIndex < 0) return;
       const rec = state.files[state.activeIndex];
-      const baseName = rec.name.replace(/\.[^/.]+$/, '');
+      const pngName = `${rec.name.replace(/\.[^/.]+$/, '')}.png`;
+
+      if (state.cachedPngBlob) {
+        triggerBlobDownload(state.cachedPngBlob, pngName);
+        return;
+      }
+
       els.previewCanvas.toBlob((blob) => {
         if (!blob) return;
-        triggerBlobDownload(blob, `${baseName}.png`);
+        triggerBlobDownload(blob, pngName);
       }, 'image/png');
-    }
-
-    async function downloadAllPngs() {
-      if (state.files.length === 0) return;
-      showStatus('INFO', `Rendering ${state.files.length} full-resolution PNG files...`);
-
-      const offscreen = document.createElement('canvas');
-      const ctx = offscreen.getContext('2d');
-
-      for (let i = 0; i < state.files.length; i++) {
-        const rec = state.files[i];
-        const imgData = RawDeveloper.render(rec.primaryDecoded, 'developed', state.params);
-        offscreen.width = imgData.width;
-        offscreen.height = imgData.height;
-        ctx.putImageData(imgData, 0, 0);
-
-        const baseName = rec.name.replace(/\.[^/.]+$/, '');
-        await new Promise((resolve) => {
-          offscreen.toBlob((blob) => {
-            if (blob) triggerBlobDownload(blob, `${baseName}.png`);
-            setTimeout(resolve, 180);
-          }, 'image/png');
-        });
-      }
-      showStatus('READY', `Exported ${state.files.length} PNG files.`);
     }
 
     function triggerBlobDownload(blob, filename) {
@@ -1759,145 +1262,102 @@
     }
 
     // =========================================================================
-    // 11. SYNTHETIC KODAK DCS TIFF GENERATOR (FOR TESTING & VERIFICATION)
+    // 9. SYNTHETIC KODAK DCS TIFF GENERATOR (FOR TESTING & VERIFICATION)
     // =========================================================================
     function generateSyntheticKodakDcsTiff() {
-      // Builds an authentic TIFF 6.0 Little-Endian file mirroring a Kodak DCS 460 structure:
-      // - IFD0: 160x120 RGB thumbnail + Make="Kodak" + Model="DCS 460C" + SubIFD pointer (Tag 330)
-      // - SubIFD0: 640x480 12-bit Uncompressed GRBG Bayer RAW sensor array with Kodak color chart
-      const thumbW = 160, thumbH = 120;
-      const rawW = 640, rawH = 480;
-      const thumbBytesLen = thumbW * thumbH * 3;
-      const rawBytesLen = rawW * rawH * 2; // 12-bit stored in 16-bit LE words
+      const width = 480;
+      const height = 320;
+      const pixelCount = width * height;
+      const rawBytes = new Uint8Array(pixelCount * 2);
+      const rawView = new DataView(rawBytes.buffer);
 
-      // Layout offsets
-      const headerSize = 8;
-      const ifd0Offset = 8;
-      const ifd0Entries = 11;
-      const ifd0Size = 2 + ifd0Entries * 12 + 4;
-      const makeStr = 'Eastman Kodak Company\0';
-      const modelStr = 'Kodak DCS 460C (Synthetic Test)\0';
-      const stringsOffset = ifd0Offset + ifd0Size;
-      const bpsThumbOffset = stringsOffset + makeStr.length + modelStr.length; // 6 bytes [8,8,8]
-      const thumbDataOffset = bpsThumbOffset + 8;
-      const subIfdOffset = thumbDataOffset + thumbBytesLen;
-      const subIfdEntries = 9;
-      const subIfdSize = 2 + subIfdEntries * 12 + 4;
-      const cfaOffset = subIfdOffset + subIfdSize; // 4 bytes [1,0,2,1] = GRBG
-      const rawDataOffset = cfaOffset + 8;
-      const totalSize = rawDataOffset + rawBytesLen;
+      // Generate a 10-bit GRBG Bayer test chart calibrated to 7300K defaults
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const isEvenRow = (y & 1) === 0;
+          const isEvenCol = (x & 1) === 0;
+          // GRBG: (0,0)=G, (0,1)=R, (1,0)=B, (1,1)=G
+          let ch = 1;
+          if (isEvenRow && !isEvenCol) ch = 0;      // R
+          else if (!isEvenRow && isEvenCol) ch = 2; // B
+
+          // Grayscale ramp + Kodak color patches
+          let targetR = 0.25 + 0.55 * (x / width);
+          let targetG = 0.25 + 0.55 * (x / width);
+          let targetB = 0.25 + 0.55 * (x / width);
+
+          if (y > height * 0.55 && y < height * 0.85) {
+            const patch = Math.floor((x / width) * 6);
+            const patches = [
+              [0.85, 0.65, 0.05], // Kodak Yellow
+              [0.80, 0.12, 0.18], // Kodak Red
+              [0.12, 0.58, 0.28], // Foliage Green
+              [0.14, 0.36, 0.78], // Sky Blue
+              [0.72, 0.50, 0.40], // Warm Skin Tone
+              [0.90, 0.90, 0.90]  // Neutral White Patch
+            ];
+            [targetR, targetG, targetB] = patches[patch] || [0.5, 0.5, 0.5];
+          }
+
+          // Inverse white-balance gains so default 7300K settings render neutral white
+          let linearVal = targetG;
+          if (ch === 0) linearVal = targetR / 1.40;
+          else if (ch === 2) linearVal = targetB / 2.20;
+
+          const dn = Math.min(1023, Math.round(26 + linearVal * 920));
+          rawView.setUint16((y * width + x) * 2, dn, true);
+        }
+      }
+
+      // Build minimal Little-Endian TIFF 6.0 container with 1 IFD
+      const numEntries = 8;
+      const ifdOffset = 8;
+      const ifdSize = 2 + numEntries * 12 + 4;
+      const dataOffset = ifdOffset + ifdSize;
+      const totalSize = dataOffset + rawBytes.length;
 
       const buf = new ArrayBuffer(totalSize);
       const view = new DataView(buf);
-      const u8 = new Uint8Array(buf);
+      const outBytes = new Uint8Array(buf);
 
-      // Header: 'II' + 42 + IFD0 offset
-      u8[0] = 0x49; u8[1] = 0x49;
+      // TIFF Header: 'II', 42, IFD0 offset
+      view.setUint8(0, 0x49);
+      view.setUint8(1, 0x49);
       view.setUint16(2, 42, true);
-      view.setUint32(4, ifd0Offset, true);
+      view.setUint32(4, ifdOffset, true);
 
-      const writeStr = (off, s) => {
-        for (let i = 0; i < s.length; i++) u8[off + i] = s.charCodeAt(i);
-      };
-      const makeOff = stringsOffset;
-      const modelOff = stringsOffset + makeStr.length;
-      writeStr(makeOff, makeStr);
-      writeStr(modelOff, modelStr);
+      let cursor = ifdOffset;
+      view.setUint16(cursor, numEntries, true);
+      cursor += 2;
 
-      // Thumb BitsPerSample [8, 8, 8]
-      view.setUint16(bpsThumbOffset, 8, true);
-      view.setUint16(bpsThumbOffset + 2, 8, true);
-      view.setUint16(bpsThumbOffset + 4, 8, true);
-
-      // CFA Pattern [1, 0, 2, 1] -> G R B G
-      u8[cfaOffset] = 1; u8[cfaOffset + 1] = 0; u8[cfaOffset + 2] = 2; u8[cfaOffset + 3] = 1;
-
-      const writeTag = (base, idx, id, type, count, valOrOff) => {
-        const p = base + 2 + idx * 12;
-        view.setUint16(p, id, true);
-        view.setUint16(p + 2, type, true);
-        view.setUint32(p + 4, count, true);
+      const writeEntry = (tag, type, count, val) => {
+        view.setUint16(cursor, tag, true);
+        view.setUint16(cursor + 2, type, true);
+        view.setUint32(cursor + 4, count, true);
         if (type === 3 && count === 1) {
-          view.setUint16(p + 8, valOrOff, true);
+          view.setUint16(cursor + 8, val, true);
         } else {
-          view.setUint32(p + 8, valOrOff, true);
+          view.setUint32(cursor + 8, val, true);
         }
+        cursor += 12;
       };
 
-      // Write IFD0 (Thumbnail)
-      view.setUint16(ifd0Offset, ifd0Entries, true);
-      writeTag(ifd0Offset, 0, 254, 4, 1, 1); // Reduced resolution subfile
-      writeTag(ifd0Offset, 1, 256, 4, 1, thumbW);
-      writeTag(ifd0Offset, 2, 257, 4, 1, thumbH);
-      writeTag(ifd0Offset, 3, 258, 3, 3, bpsThumbOffset);
-      writeTag(ifd0Offset, 4, 259, 3, 1, 1);
-      writeTag(ifd0Offset, 5, 262, 3, 1, 2); // RGB
-      writeTag(ifd0Offset, 6, 271, 2, makeStr.length, makeOff);
-      writeTag(ifd0Offset, 7, 272, 2, modelStr.length, modelOff);
-      writeTag(ifd0Offset, 8, 273, 4, 1, thumbDataOffset);
-      writeTag(ifd0Offset, 9, 277, 3, 1, 3);
-      writeTag(ifd0Offset, 10, 330, 4, 1, subIfdOffset); // SubIFD pointer!
-      view.setUint32(ifd0Offset + 2 + ifd0Entries * 12, 0, true);
+      writeEntry(256, 4, 1, width);           // ImageWidth
+      writeEntry(257, 4, 1, height);          // ImageLength
+      writeEntry(258, 3, 1, 10);              // BitsPerSample = 10
+      writeEntry(259, 3, 1, 1);               // Compression = 1 (Uncompressed)
+      writeEntry(262, 3, 1, 32803);           // PhotometricInterpretation = CFA
+      writeEntry(273, 4, 1, dataOffset);      // StripOffsets
+      writeEntry(277, 3, 1, 1);               // SamplesPerPixel = 1
+      writeEntry(279, 4, 1, rawBytes.length); // StripByteCounts
+      view.setUint32(cursor, 0, true);        // Next IFD = 0
 
-      // Write SubIFD0 (Full-Res 12-bit RAW)
-      view.setUint16(subIfdOffset, subIfdEntries, true);
-      writeTag(subIfdOffset, 0, 254, 4, 1, 0); // Full resolution
-      writeTag(subIfdOffset, 1, 256, 4, 1, rawW);
-      writeTag(subIfdOffset, 2, 257, 4, 1, rawH);
-      writeTag(subIfdOffset, 3, 258, 3, 1, 12); // 12-bit sensor
-      writeTag(subIfdOffset, 4, 259, 3, 1, 1);
-      writeTag(subIfdOffset, 5, 262, 3, 1, 32803); // CFA Photometric
-      writeTag(subIfdOffset, 6, 273, 4, 1, rawDataOffset);
-      writeTag(subIfdOffset, 7, 277, 3, 1, 1); // 1 sample per pixel
-      writeTag(subIfdOffset, 8, 33422, 1, 4, cfaOffset); // GRBG
-      view.setUint32(subIfdOffset + 2 + subIfdEntries * 12, 0, true);
-
-      // Fill Thumbnail RGB with deliberately low-res test pattern
-      for (let y = 0; y < thumbH; y++) {
-        for (let x = 0; x < thumbW; x++) {
-          const p = thumbDataOffset + (y * thumbW + x) * 3;
-          u8[p] = (x * 255 / thumbW) | 0;
-          u8[p + 1] = (y * 255 / thumbH) | 0;
-          u8[p + 2] = 128;
-        }
-      }
-
-      // Fill SubIFD0 with 12-bit GRBG Bayer RAW Macbeth-style patches & resolution Siemens star
-      const patches = [
-        [0.45, 0.25, 0.20], [0.82, 0.62, 0.52], [0.35, 0.48, 0.68], [0.36, 0.45, 0.25],
-        [0.52, 0.50, 0.72], [0.40, 0.78, 0.70], [0.88, 0.48, 0.16], [0.28, 0.36, 0.72],
-        [0.82, 0.28, 0.34], [0.38, 0.22, 0.44], [0.62, 0.78, 0.24], [0.92, 0.68, 0.16]
-      ];
-
-      for (let y = 0; y < rawH; y++) {
-        for (let x = 0; x < rawW; x++) {
-          const colIdx = Math.floor((x / rawW) * 4);
-          const rowIdx = Math.floor((y / rawH) * 3);
-          const patch = patches[(rowIdx * 4 + colIdx) % patches.length];
-
-          // Add subtle radial zone-plate detail inside each patch
-          const cx = (x % (rawW / 4)) - (rawW / 8);
-          const cy = (y % (rawH / 3)) - (rawH / 6);
-          const ring = 0.88 + 0.12 * Math.cos((cx * cx + cy * cy) * 0.015);
-
-          // GRBG Bayer mosaic: even rows G R G R, odd rows B G B G
-          const isEvenRow = (y & 1) === 0;
-          const isEvenCol = (x & 1) === 0;
-          let linVal = 0;
-          if (isEvenRow && !isEvenCol) linVal = patch[0] * 0.74; // R (unbalanced sensor response)
-          else if (!isEvenRow && isEvenCol) linVal = patch[2] * 0.68; // B
-          else linVal = patch[1]; // G
-
-          const adc12 = Math.max(0, Math.min(4095, Math.round(linVal * ring * 3800 + 64)));
-          view.setUint16(rawDataOffset + (y * rawW + x) * 2, adc12, true);
-        }
-      }
-
+      outBytes.set(rawBytes, dataOffset);
       return buf;
     }
 
     // =========================================================================
-    // 12. EVENT LISTENERS & WIRING
+    // 10. EVENT LISTENERS & WIRING
     // =========================================================================
     function escapeHtml(str) {
       return String(str)
@@ -1905,6 +1365,18 @@
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
+    }
+
+    function updateTempLabel(tempOffset) {
+      const { redGain, blueGain } = computeGainsFromTemp(tempOffset);
+      state.params.tempOffset = tempOffset;
+      state.params.redGain = redGain;
+      state.params.blueGain = blueGain;
+
+      let prefix = 'Neutral 7300K';
+      if (tempOffset > 0) prefix = `Warmer +${tempOffset}`;
+      else if (tempOffset < 0) prefix = `Colder ${tempOffset}`;
+      els.valTemp.textContent = `${prefix} (R ${redGain.toFixed(2)}x · B ${blueGain.toFixed(2)}x)`;
     }
 
     els.btnSelectFiles.addEventListener('click', () => els.fileInput.click());
@@ -1948,20 +1420,6 @@
       }
     });
 
-    // View mode buttons (Developed / RAW CFA / IFD0 Preview)
-    document.querySelectorAll('.view-mode-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        state.viewMode = btn.dataset.viewmode;
-        document.querySelectorAll('.view-mode-btn').forEach(b => {
-          b.classList.remove('bg-kodak-card', 'text-kodak-yellow');
-          b.classList.add('text-slate-400');
-        });
-        btn.classList.add('bg-kodak-card', 'text-kodak-yellow');
-        btn.classList.remove('text-slate-400');
-        renderActiveCanvas();
-      });
-    });
-
     // Zoom buttons
     els.btnZoomFit.addEventListener('click', () => {
       state.zoomMode = 'fit';
@@ -1972,130 +1430,41 @@
       applyZoomStyle();
     });
 
-    // Export buttons
-    els.btnDownloadPng.addEventListener('click', downloadCurrentPng);
-    els.btnBatchDownload.addEventListener('click', downloadAllPngs);
+    // Share / Save & Direct Download buttons
+    els.btnShareOrSave.addEventListener('click', handleShareOrSave);
+    els.btnShareMain.addEventListener('click', handleShareOrSave);
+    els.btnDirectDownload.addEventListener('click', downloadCurrentPng);
 
-    // Development parameter sliders & selects
-    const bindControl = (el, key, formatter, isFloat = true) => {
-      el.addEventListener('input', () => {
-        const val = isFloat ? parseFloat(el.value) : el.value;
-        state.params[key] = val;
-        if (formatter) formatter(val);
-        renderActiveCanvas();
-      });
-    };
+    // Three Simplified Sliders: Warmer/Colder, Black Level, Contrast
+    els.sliderTemp.addEventListener('input', () => {
+      updateTempLabel(parseInt(els.sliderTemp.value, 10));
+      renderActiveCanvas();
+    });
 
-    bindControl(els.cfaSelect, 'cfaPattern', (val) => {
-      if (state.activeIndex >= 0 && state.files[state.activeIndex].primaryDecoded.kind === 'RAW') {
-        els.metaCfa.textContent = val;
-      }
-    }, false);
-    bindControl(els.demosaicSelect, 'demosaic', null, false);
-    bindControl(els.colorMatrixSelect, 'colorMatrix', null, false);
+    els.sliderBlackLevel.addEventListener('input', () => {
+      const v = parseInt(els.sliderBlackLevel.value, 10);
+      state.params.blackLevel = v;
+      els.valBlackLevel.textContent = `${v}`;
+      renderActiveCanvas();
+    });
 
-    bindControl(els.sliderExposure, 'exposure', (v) => {
-      els.valExposure.textContent = `${v >= 0 ? '+' : ''}${v.toFixed(2)} EV`;
-    });
-    bindControl(els.sliderRedGain, 'redGain', (v) => {
-      els.valRedGain.textContent = `${v.toFixed(2)}x`;
-    });
-    bindControl(els.sliderBlueGain, 'blueGain', (v) => {
-      els.valBlueGain.textContent = `${v.toFixed(2)}x`;
-    });
-    bindControl(els.sliderBlackLevel, 'blackLevel', (v) => {
-      els.valBlackLevel.textContent = `${Math.round(v)}`;
-    });
-    bindControl(els.sliderContrast, 'contrast', (v) => {
+    els.sliderContrast.addEventListener('input', () => {
+      const v = parseFloat(els.sliderContrast.value);
+      state.params.contrast = v;
       els.valContrast.textContent = `${v.toFixed(2)}`;
-    });
-    bindControl(els.sliderGamma, 'gamma', (v) => {
-      els.valGamma.textContent = `${v.toFixed(2)}`;
+      renderActiveCanvas();
     });
 
-    // Reset development sliders
+    // Reset development sliders to 7300K defaults
     els.btnResetParams.addEventListener('click', () => {
       state.params = { ...DEFAULT_PARAMS };
-      els.cfaSelect.value = DEFAULT_PARAMS.cfaPattern;
-      els.demosaicSelect.value = DEFAULT_PARAMS.demosaic;
-      els.colorMatrixSelect.value = DEFAULT_PARAMS.colorMatrix;
-      els.sliderExposure.value = DEFAULT_PARAMS.exposure;
-      els.valExposure.textContent = '+0.00 EV';
-      els.sliderRedGain.value = DEFAULT_PARAMS.redGain;
-      els.valRedGain.textContent = '1.30x';
-      els.sliderBlueGain.value = DEFAULT_PARAMS.blueGain;
-      els.valBlueGain.textContent = '1.30x';
+      els.sliderTemp.value = 0;
+      updateTempLabel(0);
       els.sliderBlackLevel.value = DEFAULT_PARAMS.blackLevel;
-      els.valBlackLevel.textContent = '21';
+      els.valBlackLevel.textContent = `${DEFAULT_PARAMS.blackLevel}`;
       els.sliderContrast.value = DEFAULT_PARAMS.contrast;
-      els.valContrast.textContent = '1.30';
-      els.sliderGamma.value = DEFAULT_PARAMS.gamma;
-      els.valGamma.textContent = '2.20';
-      if (state.activeIndex >= 0 && state.files[state.activeIndex].primaryDecoded.kind === 'RAW') {
-        els.metaCfa.textContent = DEFAULT_PARAMS.cfaPattern;
-      }
+      els.valContrast.textContent = DEFAULT_PARAMS.contrast.toFixed(2);
       renderActiveCanvas();
-    });
-
-    // Reset development sliders
-    els.btnResetParams.addEventListener('click', () => {
-      state.params = {
-        cfaOverride: 'AUTO',
-        demosaic: 'malvar',
-        exposure: 0.0,
-        redGain: 1.35,
-        blueGain: 1.45,
-        blackLevel: 0,
-        contrast: 1.05,
-        gamma: 2.2,
-        colorMatrix: 'kodak_ccd'
-      };
-      els.cfaSelect.value = 'AUTO';
-      els.demosaicSelect.value = 'malvar';
-      els.colorMatrixSelect.value = 'kodak_ccd';
-      els.sliderExposure.value = 0;
-      els.valExposure.textContent = '+0.00 EV';
-      els.sliderRedGain.value = 1.35;
-      els.valRedGain.textContent = '1.35x';
-      els.sliderBlueGain.value = 1.45;
-      els.valBlueGain.textContent = '1.45x';
-      els.sliderBlackLevel.value = 0;
-      els.valBlackLevel.textContent = '0';
-      els.sliderContrast.value = 1.05;
-      els.valContrast.textContent = '1.05';
-      els.sliderGamma.value = 2.2;
-      els.valGamma.textContent = '2.20';
-      renderActiveCanvas();
-    });
-
-    // IFD Inspector filter & clipboard copy
-    els.ifdSelector.addEventListener('change', () => {
-      if (state.activeIndex < 0) return;
-      renderIfdTagTable(state.files[state.activeIndex], els.ifdSelector.value);
-    });
-
-    els.btnCopyMetadata.addEventListener('click', () => {
-      if (state.activeIndex < 0) return;
-      const rec = state.files[state.activeIndex];
-      const lines = [`File: ${rec.name} (${rec.byteLength} bytes)`];
-      rec.parsedMeta.ifds.forEach(ifd => {
-        lines.push(`\n--- ${ifd.label} (${ifd.width}x${ifd.height}) ---`);
-        ifd.tagList.forEach(t => {
-          lines.push(`  [${t.id}] ${t.name} (${t.typeName} x ${t.count}): ${t.values.slice(0, 16).join(', ')}`);
-        });
-      });
-
-      const textarea = document.createElement('textarea');
-      textarea.value = lines.join('\n');
-      document.body.appendChild(textarea);
-      textarea.select();
-      try {
-        document.execCommand('copy');
-        showStatus('INFO', 'Copied complete IFD & tag dump to clipboard.');
-      } catch (_) {
-        showStatus('WARN', 'Could not copy automatically.');
-      }
-      document.body.removeChild(textarea);
     });
   </script>
 </body>
