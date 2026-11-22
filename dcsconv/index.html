@@ -248,18 +248,18 @@
         <div class="space-y-2">
           <div class="flex justify-between text-xs">
             <label for="sliderBlackLevel" class="font-medium text-slate-200">Black Level</label>
-            <span id="valBlackLevel" class="font-mono text-slate-300">26</span>
+            <span id="valBlackLevel" class="font-mono text-slate-300">90</span>
           </div>
-          <input id="sliderBlackLevel" type="range" min="0" max="128" step="1" value="26" class="w-full py-1" />
+          <input id="sliderBlackLevel" type="range" min="0" max="128" step="1" value="90" class="w-full py-1" />
         </div>
 
         <!-- 3. Contrast Slider -->
         <div class="space-y-2">
           <div class="flex justify-between text-xs">
             <label for="sliderContrast" class="font-medium text-slate-200">Contrast</label>
-            <span id="valContrast" class="font-mono text-slate-300">1.10</span>
+            <span id="valContrast" class="font-mono text-slate-300">1.60</span>
           </div>
-          <input id="sliderContrast" type="range" min="0.50" max="2.00" step="0.05" value="1.10" class="w-full py-1" />
+          <input id="sliderContrast" type="range" min="0.50" max="2.00" step="0.05" value="1.60" class="w-full py-1" />
         </div>
 
         <!-- Export Actions -->
@@ -959,7 +959,7 @@
       tempOffset: 0,       // -50 (Colder) to +50 (Warmer), 0 = 7300K neutral
       redGain: 1.40,       // 7300K neutral R gain
       blueGain: 2.20,      // 7300K neutral B gain
-      blackLevel: 80,      // Default black pedestal
+      blackLevel: 90,      // Default black pedestal
       contrast: 1.60,      // Default tone contrast
       gamma: 2.20,
       colorMatrix: 'vivid' // Kodak Ektachrome Vivid Boost
