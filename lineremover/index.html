@@ -1,1 +1,1274 @@
+<!DOCTYPE html>
+<html lang="zh-HK" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>相片去綠線與畫質修復暗房 | Scanline Artifact Remover</title>
+    <!-- 載入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 載入 Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 載入 Google Fonts: Noto Sans TC & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #09090b;
+            color: #f4f4f5;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* 自訂滑桿樣式 */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            transition: transform 0.1s;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #27272a;
+            border-radius: 2px;
+        }
+        /* 棋盤格背景 (透明底顯示用) */
+        .checkerboard {
+            background-image: linear-gradient(45deg, #18181b 25%, transparent 25%),
+                              linear-gradient(-45deg, #18181b 25%, transparent 25%),
+                              linear-gradient(45deg, transparent 75%, #18181b 75%),
+                              linear-gradient(-45deg, transparent 75%, #18181b 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        /* 隱藏捲軸但保留功能 */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden bg-zinc-950 text-zinc-100">
 
+    <!-- 頂部導覽列 -->
+    <header class="h-14 border-b border-zinc-800 bg-zinc-900/80 backdrop-blur-md px-4 flex items-center justify-between shrink-0 z-20">
+        <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                <i data-lucide="scan-line" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <h1 class="text-sm md:text-base font-bold tracking-wide text-zinc-100 flex items-center gap-2">
+                    相片去綠線修復暗房
+                    <span class="hidden sm:inline-block text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Darkroom Pro</span>
+                </h1>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 md:gap-3">
+            <!-- 上傳按鈕 -->
+            <label for="file-upload" class="cursor-pointer flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-xs md:text-sm font-medium transition border border-zinc-700">
+                <i data-lucide="upload" class="w-4 h-4 text-emerald-400"></i>
+                <span>上傳相片</span>
+            </label>
+            <input id="file-upload" type="file" accept="image/jpeg, image/png, image/webp" class="hidden">
+
+            <!-- 下載按鈕 -->
+            <button id="btn-download" class="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs md:text-sm font-medium transition shadow-lg shadow-emerald-900/30">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>下載修復圖</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主工作區 -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+        
+        <!-- 左側/中央：互動式 Canvas 畫布區 -->
+        <main class="flex-1 relative flex flex-col bg-zinc-950 checkerboard overflow-hidden" id="viewport-container">
+            
+            <!-- 浮動頂部工具提示與操作模式切換 -->
+            <div class="absolute top-3 left-3 right-3 z-10 flex flex-wrap items-center justify-between gap-2 pointer-events-none">
+                <!-- 模式切換器 -->
+                <div class="pointer-events-auto inline-flex rounded-xl bg-zinc-900/90 backdrop-blur border border-zinc-800 p-1 shadow-xl">
+                    <button id="mode-select" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white transition">
+                        <i data-lucide="move-vertical" class="w-3.5 h-3.5"></i>
+                        <span>選取橫線位置</span>
+                    </button>
+                    <button id="mode-pan" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition">
+                        <i data-lucide="hand" class="w-3.5 h-3.5"></i>
+                        <span>拖曳畫布檢視</span>
+                    </button>
+                </div>
+
+                <!-- 縮放控制與對比開關 -->
+                <div class="pointer-events-auto flex items-center gap-2 rounded-xl bg-zinc-900/90 backdrop-blur border border-zinc-800 p-1 px-2.5 shadow-xl">
+                    <button id="btn-zoom-out" class="p-1 text-zinc-400 hover:text-white rounded" title="縮小">
+                        <i data-lucide="zoom-out" class="w-4 h-4"></i>
+                    </button>
+                    <span id="zoom-label" class="text-xs font-mono text-zinc-300 w-11 text-center">100%</span>
+                    <button id="btn-zoom-in" class="p-1 text-zinc-400 hover:text-white rounded" title="放大">
+                        <i data-lucide="zoom-in" class="w-4 h-4"></i>
+                    </button>
+                    <button id="btn-zoom-fit" class="text-[11px] px-2 py-0.5 rounded bg-zinc-800 hover:bg-zinc-700 text-zinc-300 ml-1">
+                        適合畫面
+                    </button>
+                    <div class="w-px h-4 bg-zinc-700 mx-1"></div>
+                    <button id="btn-toggle-split" class="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                        <i data-lucide="split-square-horizontal" class="w-3.5 h-3.5"></i>
+                        <span class="hidden sm:inline">對比滑桿</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 畫布容器 -->
+            <div id="canvas-wrapper" class="w-full h-full flex items-center justify-center relative overflow-hidden cursor-crosshair">
+                <canvas id="main-canvas" class="shadow-2xl max-w-none"></canvas>
+                
+                <!-- 提示訊息 Toast -->
+                <div id="toast-msg" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-full bg-zinc-800/95 border border-zinc-700 text-xs text-zinc-100 shadow-2xl flex items-center gap-2 opacity-0 pointer-events-none transition-opacity duration-300">
+                    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+                    <span id="toast-text">操作成功</span>
+                </div>
+            </div>
+
+            <!-- 底部快速指引列 -->
+            <div class="bg-zinc-900/90 border-t border-zinc-800/80 px-4 py-2 text-[11px] text-zinc-400 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-4 truncate">
+                    <span class="flex items-center gap-1"><strong class="text-zinc-200">操作貼士：</strong> 直接喺畫面上上下拖曳框選綠色橫線，或按「智慧自動偵測」</span>
+                    <span class="hidden md:inline text-zinc-500">| 滾輪可縮放，按住空白鍵或切換至「拖曳畫布」可移動檢視細節</span>
+                </div>
+                <div id="img-dimensions" class="font-mono text-zinc-500 shrink-0 ml-2">1200 × 800 px</div>
+            </div>
+        </main>
+
+        <!-- 右側：暗房修復控制面板 -->
+        <aside class="w-full lg:w-88 xl:w-96 bg-zinc-900 border-t lg:border-t-0 lg:border-l border-zinc-800 flex flex-col max-h-[45vh] lg:max-h-none overflow-y-auto no-scrollbar shrink-0 z-10">
+            <div class="p-4 space-y-5">
+
+                <!-- 步驟 1：定位綠色橫線 -->
+                <section class="space-y-3 bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800/80">
+                    <div class="flex items-center justify-between">
+                        <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                            <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">1</span>
+                            橫線位置與範圍 (Y軸)
+                        </h2>
+                        <button id="btn-auto-detect" class="flex items-center gap-1 text-[11px] font-medium px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 transition">
+                            <i data-lucide="sparkles" class="w-3 h-3"></i>
+                            <span>智慧自動偵測</span>
+                        </button>
+                    </div>
+
+                    <!-- Y軸中心位置滑桿 -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-zinc-400">垂直位置 (Y 座標)</span>
+                            <span id="val-y-pos" class="font-mono text-emerald-400">200 px</span>
+                        </div>
+                        <input type="range" id="slider-y-pos" min="0" max="800" value="200" class="w-full">
+                    </div>
+
+                    <!-- 橫線粗細 (高度) 滑桿 -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-zinc-400">橫線涵蓋高度 (粗細)</span>
+                            <span id="val-height" class="font-mono text-emerald-400">14 px</span>
+                        </div>
+                        <input type="range" id="slider-height" min="2" max="120" value="14" class="w-full">
+                    </div>
+
+                    <!-- 輔助框線顯示開關 -->
+                    <div class="flex items-center justify-between pt-1">
+                        <span class="text-xs text-zinc-400">顯示選取範圍標示線</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="chk-show-guide" checked class="sr-only peer">
+                            <div class="w-8 h-4 bg-zinc-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- 步驟 2：選擇修復演算法 -->
+                <section class="space-y-3 bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800/80">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                        <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">2</span>
+                        修復演算法模式
+                    </h2>
+
+                    <div class="grid grid-cols-1 gap-2" id="algo-selector">
+                        <!-- 模式 A：混合修復 (預設推薦) -->
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="algorithm" value="blend" checked class="peer sr-only">
+                            <div class="p-2.5 rounded-lg border border-zinc-800 bg-zinc-900/50 peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10 transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-zinc-100">混合智慧修復 (推薦)</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300">Blend</span>
+                                </div>
+                                <p class="text-[11px] text-zinc-400 mt-1 leading-relaxed">結合色彩平衡與上下像素插值，兼顧樹枝紋理連貫與邊緣自然過渡。</p>
+                            </div>
+                        </label>
+
+                        <!-- 模式 B：局部色彩平衡修正 -->
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="algorithm" value="detint" class="peer sr-only">
+                            <div class="p-2.5 rounded-lg border border-zinc-800 bg-zinc-900/50 peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10 transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-zinc-100">局部色彩去綠偏 (保留細節)</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">De-tint</span>
+                                </div>
+                                <p class="text-[11px] text-zinc-400 mt-1 leading-relaxed">針對半透明綠色橫線，保留原本樹枝光影紋理，並精準抵消綠色與暗部色偏。</p>
+                            </div>
+                        </label>
+
+                        <!-- 模式 C：上下像素垂直插值填補 -->
+                        <label class="cursor-pointer block">
+                            <input type="radio" name="algorithm" value="interp" class="peer sr-only">
+                            <div class="p-2.5 rounded-lg border border-zinc-800 bg-zinc-900/50 peer-checked:border-emerald-500 peer-checked:bg-emerald-500/10 transition">
+                                <div class="flex items-center justify-between">
+                                    <span class="text-xs font-bold text-zinc-100">上下像素垂直插值填補</span>
+                                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300">Interpolation</span>
+                                </div>
+                                <p class="text-[11px] text-zinc-400 mt-1 leading-relaxed">完全捨棄橫線內損壞像素，直接由上下正常像素進行平滑重建，適合全黑或嚴重雜訊線。</p>
+                            </div>
+                        </label>
+                    </div>
+                </section>
+
+                <!-- 步驟 3：微調參數 -->
+                <section class="space-y-3 bg-zinc-950/60 p-3.5 rounded-xl border border-zinc-800/80">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
+                        <span class="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-[10px]">3</span>
+                        精細參數微調
+                    </h2>
+
+                    <!-- 邊緣羽化 -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-zinc-400">邊緣羽化過渡 (Feather)</span>
+                            <span id="val-feather" class="font-mono text-emerald-400">4 px</span>
+                        </div>
+                        <input type="range" id="slider-feather" min="0" max="25" value="4" class="w-full">
+                    </div>
+
+                    <!-- 混合比例 / 色彩補償強度 -->
+                    <div class="space-y-1" id="blend-ratio-group">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-zinc-400">插值重建比重 (vs 色彩保留)</span>
+                            <span id="val-blend" class="font-mono text-emerald-400">55%</span>
+                        </div>
+                        <input type="range" id="slider-blend" min="0" max="100" value="55" class="w-full">
+                    </div>
+
+                    <!-- 亮度與綠偏微調 -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-zinc-400">局部亮度補償 (Brightness)</span>
+                            <span id="val-luma" class="font-mono text-emerald-400">+10%</span>
+                        </div>
+                        <input type="range" id="slider-luma" min="-50" max="80" value="10" class="w-full">
+                    </div>
+
+                    <!-- 雜訊顆粒匹配 -->
+                    <div class="space-y-1">
+                        <div class="flex justify-between text-xs">
+                            <span class="text-zinc-400">膠片顆粒質感匹配 (Grain)</span>
+                            <span id="val-grain" class="font-mono text-emerald-400">15%</span>
+                        </div>
+                        <input type="range" id="slider-grain" min="0" max="60" value="15" class="w-full">
+                    </div>
+                </section>
+
+                <!-- 操作指引折疊卡 -->
+                <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-800/30 text-[11px] text-zinc-300 space-y-1.5">
+                    <div class="font-bold text-emerald-400 flex items-center gap-1.5">
+                        <i data-lucide="info" class="w-3.5 h-3.5"></i>
+                        <span>針對你張白雀仔相嘅修復建議：</span>
+                    </div>
+                    <ol class="list-decimal list-inside space-y-1 text-zinc-400">
+                        <li>按右上角「<strong class="text-zinc-200">上傳相片</strong>」揀選你張相。</li>
+                        <li>張相條綠線偏暗且橫跨樹枝，建議用「<strong class="text-zinc-200">混合智慧修復</strong>」模式。</li>
+                        <li>如果樹枝接駁位有少少起格，可以適當調高「<strong class="text-zinc-200">邊緣羽化過渡</strong>」同「<strong class="text-zinc-200">顆粒質感匹配</strong>」，令修復位完全融入原相底噪。</li>
+                    </ol>
+                </div>
+
+            </div>
+        </aside>
+    </div>
+
+    <script>
+        // 初始化 Lucide 圖示
+        lucide.createIcons();
+
+        // 核心應用程式狀態
+        const state = {
+            imgWidth: 1200,
+            imgHeight: 800,
+            originalImageData: null,
+            repairedImageData: null,
+            
+            // 橫線選區參數 (以原圖像素為單位)
+            lineY: 215,
+            lineHeight: 16,
+            
+            // 演算法與微調參數
+            algorithm: 'blend', // 'blend', 'detint', 'interp'
+            feather: 4,
+            blendRatio: 55,     // 0 ~ 100
+            lumaBoost: 10,      // -50 ~ 80
+            grainAmount: 15,    // 0 ~ 60
+            
+            // 檢視與互動狀態
+            zoom: 1,
+            panX: 0,
+            panY: 0,
+            interactionMode: 'select', // 'select' | 'pan'
+            showGuide: true,
+            showSplit: true,
+            splitRatio: 0.5,    // 0.0 ~ 1.0 (畫面 X 軸比例)
+            
+            // 拖曳狀態追蹤
+            isDragging: false,
+            dragType: null,     // 'split' | 'line-move' | 'line-top' | 'line-bottom' | 'pan'
+            dragStartX: 0,
+            dragStartY: 0,
+            initialLineY: 0,
+            initialLineHeight: 0,
+            initialPanX: 0,
+            initialPanY: 0,
+            spacePressed: false
+        };
+
+        // DOM 元素參照
+        const canvas = document.getElementById('main-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        const canvasWrapper = document.getElementById('canvas-wrapper');
+        
+        // 離屏畫布 (用來存放原圖與修復後的完整解像度像素)
+        const origCanvas = document.createElement('canvas');
+        const origCtx = origCanvas.getContext('2d', { willReadFrequently: true });
+        const repCanvas = document.createElement('canvas');
+        const repCtx = repCanvas.getContext('2d', { willReadFrequently: true });
+
+        // 控制項 DOM
+        const sliderYPos = document.getElementById('slider-y-pos');
+        const sliderHeight = document.getElementById('slider-height');
+        const sliderFeather = document.getElementById('slider-feather');
+        const sliderBlend = document.getElementById('slider-blend');
+        const sliderLuma = document.getElementById('slider-luma');
+        const sliderGrain = document.getElementById('slider-grain');
+
+        const valYPos = document.getElementById('val-y-pos');
+        const valHeight = document.getElementById('val-height');
+        const valFeather = document.getElementById('val-feather');
+        const valBlend = document.getElementById('val-blend');
+        const valLuma = document.getElementById('val-luma');
+        const valGrain = document.getElementById('val-grain');
+
+        // 顯示提示訊息
+        let toastTimeout;
+        function showToast(msg) {
+            const toast = document.getElementById('toast-msg');
+            document.getElementById('toast-text').textContent = msg;
+            toast.classList.remove('opacity-0');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('opacity-0');
+            }, 2500);
+        }
+
+        // 生成預設示例圖片 (模擬帶有樹枝、暗調背景與水平綠色雜訊線的相片)
+        function generateSampleImage() {
+            const w = 1000;
+            const h = 680;
+            origCanvas.width = w;
+            origCanvas.height = h;
+            
+            // 1. 繪製深色自然背景漸層
+            const bgGrad = origCtx.createLinearGradient(0, 0, w, h);
+            bgGrad.addColorStop(0, '#2a332d');
+            bgGrad.addColorStop(0.5, '#3b333a');
+            bgGrad.addColorStop(1, '#222824');
+            origCtx.fillStyle = bgGrad;
+            origCtx.fillRect(0, 0, w, h);
+
+            // 模擬散景光斑與葉影
+            for (let i = 0; i < 35; i++) {
+                origCtx.beginPath();
+                const bx = (Math.sin(i * 12.3) * 0.5 + 0.5) * w;
+                const by = (Math.cos(i * 45.6) * 0.5 + 0.5) * h;
+                const br = 40 + (i % 5) * 25;
+                origCtx.arc(bx, by, br, 0, Math.PI * 2);
+                origCtx.fillStyle = i % 2 === 0 ? 'rgba(65, 88, 62, 0.25)' : 'rgba(90, 75, 85, 0.2)';
+                origCtx.fill();
+            }
+
+            // 2. 繪製斜向樹枝 (穿過目標綠線區域，測試修復連貫性)
+            origCtx.strokeStyle = '#1c1518';
+            origCtx.lineCap = 'round';
+            
+            // 主樹枝 (左下到右上)
+            origCtx.lineWidth = 14;
+            origCtx.beginPath();
+            origCtx.moveTo(150, 680);
+            origCtx.quadraticCurveTo(220, 350, 100, 0);
+            origCtx.stroke();
+
+            // 右側樹枝
+            origCtx.lineWidth = 10;
+            origCtx.beginPath();
+            origCtx.moveTo(520, 520);
+            origCtx.quadraticCurveTo(610, 280, 650, 0);
+            origCtx.stroke();
+
+            // 橫向棲息樹枝
+            origCtx.lineWidth = 18;
+            origCtx.beginPath();
+            origCtx.moveTo(40, 650);
+            origCtx.quadraticCurveTo(500, 500, 980, 520);
+            origCtx.stroke();
+
+            // 3. 繪製一隻白色小鳥剪影
+            origCtx.fillStyle = '#a8b0ad';
+            origCtx.beginPath();
+            origCtx.ellipse(450, 380, 55, 85, 0.35, 0, Math.PI * 2);
+            origCtx.fill();
+            // 鳥頭
+            origCtx.beginPath();
+            origCtx.arc(495, 290, 36, 0, Math.PI * 2);
+            origCtx.fill();
+            // 鳥眼罩
+            origCtx.fillStyle = '#1e2221';
+            origCtx.beginPath();
+            origCtx.ellipse(505, 288, 22, 11, -0.1, 0, Math.PI * 2);
+            origCtx.fill();
+
+            // 4. 加入全圖細微感光元件底噪 (Film Grain)
+            const imgData = origCtx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+            for (let i = 0; i < data.length; i += 4) {
+                const noise = (Math.random() - 0.5) * 14;
+                data[i] = Math.min(255, Math.max(0, data[i] + noise));
+                data[i+1] = Math.min(255, Math.max(0, data[i+1] + noise));
+                data[i+2] = Math.min(255, Math.max(0, data[i+2] + noise));
+            }
+
+            // 5. 模擬水平綠色雜訊橫線 (Scanline Banding Artifact) 喺 Y = 185 附近
+            const artifactY = 185;
+            const artifactH = 12;
+            for (let y = artifactY - 4; y < artifactY + artifactH + 4; y++) {
+                // 計算垂直分佈權重 (中間偏黑綠，上下緣帶綠色光暈)
+                const distFromCenter = Math.abs(y - (artifactY + artifactH / 2));
+                const normDist = distFromCenter / (artifactH / 2 + 4);
+                if (normDist > 1) continue;
+
+                const darkFactor = normDist < 0.5 ? 0.25 : 0.25 + (normDist - 0.5) * 1.5;
+                const greenShift = Math.sin((1 - normDist) * Math.PI) * 55;
+
+                for (let x = 0; x < w; x++) {
+                    const idx = (y * w + x) * 4;
+                    // 模擬原圖被壓暗並染上綠色雜訊
+                    data[idx] = Math.min(255, Math.max(0, data[idx] * darkFactor * 0.6));
+                    data[idx+1] = Math.min(255, Math.max(0, data[idx+1] * darkFactor + greenShift));
+                    data[idx+2] = Math.min(255, Math.max(0, data[idx+2] * darkFactor * 0.5));
+                }
+            }
+
+            origCtx.putImageData(imgData, 0, 0);
+            loadImageFromSource(origCanvas, true);
+        }
+
+        // 載入圖片至系統並初始化參數
+        function loadImageFromSource(sourceCanvasOrImg, isSample = false) {
+            const w = sourceCanvasOrImg.width;
+            const h = sourceCanvasOrImg.height;
+            
+            state.imgWidth = w;
+            state.imgHeight = h;
+            
+            origCanvas.width = w;
+            origCanvas.height = h;
+            origCtx.drawImage(sourceCanvasOrImg, 0, 0, w, h);
+            
+            repCanvas.width = w;
+            repCanvas.height = h;
+
+            state.originalImageData = origCtx.getImageData(0, 0, w, h);
+            
+            // 更新 UI 尺寸資訊與滑桿上限
+            document.getElementById('img-dimensions').textContent = `${w} × ${h} px`;
+            sliderYPos.max = h - 1;
+            sliderHeight.max = Math.max(40, Math.round(h * 0.25));
+
+            if (isSample) {
+                state.lineY = 191;
+                state.lineHeight = 14;
+                syncSlidersFromState();
+                processRepair();
+                fitCanvasToScreen();
+            } else {
+                // 上傳新相片時自動執行一次智慧偵測
+                autoDetectHorizontalLine(true);
+                fitCanvasToScreen();
+            }
+        }
+
+        // 智慧自動偵測水平綠色/異常暗線演算法
+        function autoDetectHorizontalLine(isSilent = false) {
+            if (!state.originalImageData) return;
+            const w = state.imgWidth;
+            const h = state.imgHeight;
+            const data = state.originalImageData.data;
+
+            // 計算每一橫行 (Row) 嘅平均 RGB 與綠色偏移指數
+            const rowStats = new Array(h);
+            for (let y = 0; y < h; y++) {
+                let sumR = 0, sumG = 0, sumB = 0;
+                // 橫向抽樣加速運算
+                let count = 0;
+                for (let x = 0; x < w; x += 2) {
+                    const idx = (y * w + x) * 4;
+                    sumR += data[idx];
+                    sumG += data[idx + 1];
+                    sumB += data[idx + 2];
+                    count++;
+                }
+                const avgR = sumR / count;
+                const avgG = sumG / count;
+                const avgB = sumB / count;
+                // 綠色異常度：G 顯著高於 R 同 B 嘅平均值
+                const greenExcess = avgG - (avgR + avgB) * 0.5;
+                const luma = 0.299 * avgR + 0.587 * avgG + 0.114 * avgB;
+                rowStats[y] = { avgR, avgG, avgB, greenExcess, luma };
+            }
+
+            // 尋找相對於上下鄰近區域 (上下 25px 視窗) 突變最大嘅水平線
+            let maxScore = -Infinity;
+            let bestY = Math.round(h * 0.3);
+            const windowSize = Math.max(15, Math.round(h * 0.03));
+
+            const scores = new Float32Array(h);
+
+            for (let y = windowSize; y < h - windowSize; y++) {
+                // 計算上方正常區域同下方正常區域嘅基準值
+                let refGreenExcess = 0;
+                let refLuma = 0;
+                let samples = 0;
+                for (let offset = 8; offset <= windowSize; offset += 2) {
+                    refGreenExcess += rowStats[y - offset].greenExcess + rowStats[y + offset].greenExcess;
+                    refLuma += rowStats[y - offset].luma + rowStats[y + offset].luma;
+                    samples += 2;
+                }
+                refGreenExcess /= samples;
+                refLuma /= samples;
+
+                const curr = rowStats[y];
+                // 異常分數 = 綠色突增權重 + 突然變暗/斷層權重
+                const greenSpike = Math.max(0, curr.greenExcess - refGreenExcess) * 2.5;
+                const lumaDrop = Math.abs(curr.luma - refLuma) * 0.8;
+                const score = greenSpike + lumaDrop;
+                scores[y] = score;
+
+                if (score > maxScore) {
+                    maxScore = score;
+                    bestY = y;
+                }
+            }
+
+            // 估算橫線粗細 (向 bestY 上下擴展，直到分數低於峰值嘅 25%)
+            const threshold = maxScore * 0.25;
+            let topY = bestY;
+            let bottomY = bestY;
+            while (topY > 1 && scores[topY - 1] > threshold && (bestY - topY) < h * 0.1) {
+                topY--;
+            }
+            while (bottomY < h - 2 && scores[bottomY + 1] > threshold && (bottomY - bestY) < h * 0.1) {
+                bottomY++;
+            }
+
+            // 加上少許安全邊距確保完全包覆綠邊
+            const detectedHeight = Math.max(6, (bottomY - topY + 1) + 4);
+            const detectedCenterY = Math.round((topY + bottomY) / 2);
+
+            state.lineY = detectedCenterY;
+            state.lineHeight = detectedHeight;
+
+            syncSlidersFromState();
+            processRepair();
+            renderViewport();
+
+            if (!isSilent) {
+                showToast(`已自動鎖定異常橫線：Y = ${detectedCenterY}px (粗細 ${detectedHeight}px)`);
+            }
+        }
+
+        // 同步 UI 滑桿顯示
+        function syncSlidersFromState() {
+            sliderYPos.value = state.lineY;
+            valYPos.textContent = `${state.lineY} px`;
+
+            sliderHeight.value = state.lineHeight;
+            valHeight.textContent = `${state.lineHeight} px`;
+
+            sliderFeather.value = state.feather;
+            valFeather.textContent = `${state.feather} px`;
+
+            sliderBlend.value = state.blendRatio;
+            valBlend.textContent = `${state.blendRatio}%`;
+
+            sliderLuma.value = state.lumaBoost;
+            valLuma.textContent = `${state.lumaBoost >= 0 ? '+' : ''}${state.lumaBoost}%`;
+
+            sliderGrain.value = state.grainAmount;
+            valGrain.textContent = `${state.grainAmount}%`;
+        }
+
+        // 確定性偽隨機數生成器 (令顆粒質感穩定唔閃爍)
+        function seededRandom(x, y) {
+            const n = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
+            return n - Math.floor(n);
+        }
+
+        // 核心修復演算法處理
+        function processRepair() {
+            if (!state.originalImageData) return;
+
+            const w = state.imgWidth;
+            const h = state.imgHeight;
+            const src = state.originalImageData.data;
+            
+            // 複製一份原圖資料進行修改
+            const outImgData = repCtx.createImageData(w, h);
+            const dst = outImgData.data;
+            dst.set(src);
+
+            const halfH = state.lineHeight / 2;
+            const feather = state.feather;
+            
+            // 有效處理區間 [startY, endY]
+            const coreTop = Math.max(2, Math.floor(state.lineY - halfH));
+            const coreBottom = Math.min(h - 3, Math.ceil(state.lineY + halfH));
+            const startY = Math.max(1, coreTop - feather);
+            const endY = Math.min(h - 2, coreBottom + feather);
+
+            // 取樣上下正常參考像素帶的厚度 (用來計算平均色彩與平滑插值)
+            const sampleBand = Math.max(3, Math.min(8, Math.round(state.lineHeight * 0.4)));
+            const topRefEnd = Math.max(0, coreTop - 1);
+            const topRefStart = Math.max(0, topRefEnd - sampleBand);
+            const botRefStart = Math.min(h - 1, coreBottom + 1);
+            const botRefEnd = Math.min(h - 1, botRefStart + sampleBand);
+
+            const algo = state.algorithm;
+            const blendWeight = state.blendRatio / 100;
+            const lumaMultiplier = 1 + (state.lumaBoost / 100);
+            const grainStrength = state.grainAmount * 0.45;
+
+            // 逐列 (Column X) 處理，確保斜向樹枝與背景紋理垂直連貫
+            for (let x = 0; x < w; x++) {
+                // 1. 計算上方正常像素帶的平均 RGB (帶輕微水平 3px 抗鋸齒平滑)
+                let topR = 0, topG = 0, topB = 0, topCount = 0;
+                for (let sy = topRefStart; sy <= topRefEnd; sy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const sx = Math.min(w - 1, Math.max(0, x + dx));
+                        const wgt = dx === 0 ? 2 : 1;
+                        const idx = (sy * w + sx) * 4;
+                        topR += src[idx] * wgt;
+                        topG += src[idx + 1] * wgt;
+                        topB += src[idx + 2] * wgt;
+                        topCount += wgt;
+                    }
+                }
+                if (topCount > 0) { topR /= topCount; topG /= topCount; topB /= topCount; }
+
+                // 2. 計算下方正常像素帶的平均 RGB
+                let botR = 0, botG = 0, botB = 0, botCount = 0;
+                for (let sy = botRefStart; sy <= botRefEnd; sy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        const sx = Math.min(w - 1, Math.max(0, x + dx));
+                        const wgt = dx === 0 ? 2 : 1;
+                        const idx = (sy * w + sx) * 4;
+                        botR += src[idx] * wgt;
+                        botG += src[idx + 1] * wgt;
+                        botB += src[idx + 2] * wgt;
+                        botCount += wgt;
+                    }
+                }
+                if (botCount > 0) { botR /= botCount; botG /= botCount; botB /= botCount; }
+
+                // 計算上下正常區域的平均色調比例 (R/G 與 B/G)，用於 De-tint 色彩平衡修正
+                const refAvgR = (topR + botR) * 0.5;
+                const refAvgG = (topG + botG) * 0.5;
+                const refAvgB = (topB + botB) * 0.5;
+                const refLuma = 0.299 * refAvgR + 0.587 * refAvgG + 0.114 * refAvgB;
+
+                // 3. 逐行 (Row Y) 修復受影響區域
+                for (let y = startY; y <= endY; y++) {
+                    const idx = (y * w + x) * 4;
+                    const origR = src[idx];
+                    const origG = src[idx + 1];
+                    const origB = src[idx + 2];
+
+                    // 計算垂直插值比例 t (0 = 頂部邊界, 1 = 底部邊界)
+                    const span = Math.max(1, endY - startY);
+                    const t = (y - startY) / span;
+                    // 使用 Smoothstep 令上下過渡更順滑
+                    const smoothT = t * t * (3 - 2 * t);
+
+                    // 計算羽化遮罩權重 alpha (核心區為 1.0，羽化邊緣線性漸變至 0.0)
+                    let alpha = 1.0;
+                    if (y < coreTop && feather > 0) {
+                        alpha = 1.0 - (coreTop - y) / (feather + 1);
+                    } else if (y > coreBottom && feather > 0) {
+                        alpha = 1.0 - (y - coreBottom) / (feather + 1);
+                    }
+                    alpha = Math.max(0, Math.min(1, alpha));
+
+                    // --- 演算法 A：上下像素垂直插值 (Interpolation) ---
+                    const interpR = topR * (1 - smoothT) + botR * smoothT;
+                    const interpG = topG * (1 - smoothT) + botG * smoothT;
+                    const interpB = topB * (1 - smoothT) + botB * smoothT;
+
+                    // --- 演算法 B：局部色彩去綠偏 (Color De-tinting / Spill Removal) ---
+                    // 保留原本像素嘅高頻明暗紋理變化，但將色相與平均亮度對齊上下正常區域
+                    const origLuma = 0.299 * origR + 0.587 * origG + 0.114 * origB;
+                    // 計算原像素相對於橫線暗度嘅相對紋理起伏
+                    const lumaRatio = origLuma > 4 ? (refLuma / origLuma) : 1.0;
+                    // 限制最大增益避免暗部雜訊過度放大
+                    const clampedRatio = Math.min(3.2, Math.max(0.4, lumaRatio));
+
+                    // 抵消多餘綠色通道並還原紅藍比例
+                    const greenExcess = Math.max(0, origG - (origR + origB) * 0.5);
+                    let detintR = (origR + greenExcess * 0.45) * clampedRatio;
+                    let detintG = (origG - greenExcess * 0.65) * clampedRatio;
+                    let detintB = (origB + greenExcess * 0.45) * clampedRatio;
+
+                    // 將色彩平衡拉向局部插值色調，同時保留原本細節對比
+                    const detailDelta = (origLuma - (origR * 0.33 + origG * 0.34 + origB * 0.33));
+                    detintR = detintR * 0.55 + interpR * 0.45 + detailDelta * 0.5;
+                    detintG = detintG * 0.55 + interpG * 0.45 + detailDelta * 0.5;
+                    detintB = detintB * 0.55 + interpB * 0.45 + detailDelta * 0.5;
+
+                    // 根據選擇嘅演算法組合結果
+                    let targetR, targetG, targetB;
+                    if (algo === 'interp') {
+                        targetR = interpR;
+                        targetG = interpG;
+                        targetB = interpB;
+                    } else if (algo === 'detint') {
+                        targetR = detintR;
+                        targetG = detintG;
+                        targetB = detintB;
+                    } else {
+                        // 'blend' 混合模式：根據 blendWeight 融合插值與去色偏結果
+                        targetR = detintR * (1 - blendWeight) + interpR * blendWeight;
+                        targetG = detintG * (1 - blendWeight) + interpG * blendWeight;
+                        targetB = detintB * (1 - blendWeight) + interpB * blendWeight;
+                    }
+
+                    // 套用局部亮度補償
+                    targetR *= lumaMultiplier;
+                    targetG *= lumaMultiplier;
+                    targetB *= lumaMultiplier;
+
+                    // 套用膠片顆粒質感匹配 (令平滑插值區唔會顯得過份塑膠感)
+                    if (grainStrength > 0) {
+                        const rand = (seededRandom(x, y) - 0.5) * grainStrength;
+                        targetR += rand;
+                        targetG += rand;
+                        targetB += rand;
+                    }
+
+                    // 根據羽化遮罩 alpha 與原圖混合
+                    dst[idx]     = Math.min(255, Math.max(0, origR * (1 - alpha) + targetR * alpha));
+                    dst[idx + 1] = Math.min(255, Math.max(0, origG * (1 - alpha) + targetG * alpha));
+                    dst[idx + 2] = Math.min(255, Math.max(0, origB * (1 - alpha) + targetB * alpha));
+                }
+            }
+
+            repCtx.putImageData(outImgData, 0, 0);
+            renderViewport();
+        }
+
+        // 渲染主畫布 (包含縮放、拖曳、Before/After 對比滑桿與輔助標示線)
+        function renderViewport() {
+            const containerRect = canvasWrapper.getBoundingClientRect();
+            canvas.width = containerRect.width;
+            canvas.height = containerRect.height;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 計算圖片在畫布上的顯示位置與尺寸
+            const drawW = state.imgWidth * state.zoom;
+            const drawH = state.imgHeight * state.zoom;
+            const drawX = (canvas.width - drawW) / 2 + state.panX;
+            const drawY = (canvas.height - drawH) / 2 + state.panY;
+
+            // 開啟高品質縮放
+            ctx.imageSmoothingEnabled = state.zoom < 2;
+
+            // 1. 繪製修復後的圖片 (底層全圖)
+            ctx.drawImage(repCanvas, drawX, drawY, drawW, drawH);
+
+            // 2. 如果開啟對比滑桿，左側繪製原始未修復圖片
+            if (state.showSplit) {
+                const splitScreenX = drawX + drawW * state.splitRatio;
+                
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(0, 0, splitScreenX, canvas.height);
+                ctx.clip();
+                ctx.drawImage(origCanvas, drawX, drawY, drawW, drawH);
+                ctx.restore();
+
+                // 繪製對比分割線
+                if (splitScreenX >= drawX && splitScreenX <= drawX + drawW) {
+                    ctx.save();
+                    ctx.strokeStyle = '#10b981';
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = 'rgba(0,0,0,0.6)';
+                    ctx.shadowBlur = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(splitScreenX, Math.max(0, drawY));
+                    ctx.lineTo(splitScreenX, Math.min(canvas.height, drawY + drawH));
+                    ctx.stroke();
+
+                    // 繪製分割線中央手柄圓鈕
+                    const handleY = Math.max(drawY + 24, Math.min(drawY + drawH - 24, canvas.height / 2));
+                    ctx.fillStyle = '#10b981';
+                    ctx.beginPath();
+                    ctx.arc(splitScreenX, handleY, 14, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+
+                    // 左右小箭頭
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.moveTo(splitScreenX - 6, handleY);
+                    ctx.lineTo(splitScreenX - 2, handleY - 4);
+                    ctx.lineTo(splitScreenX - 2, handleY + 4);
+                    ctx.moveTo(splitScreenX + 6, handleY);
+                    ctx.lineTo(splitScreenX + 2, handleY - 4);
+                    ctx.lineTo(splitScreenX + 2, handleY + 4);
+                    ctx.fill();
+
+                    // 繪製「修復前 / 修復後」標籤
+                    if (drawW > 220) {
+                        ctx.font = 'bold 11px "Noto Sans TC", sans-serif';
+                        // 修復前標籤
+                        if (splitScreenX - drawX > 75) {
+                            ctx.fillStyle = 'rgba(9, 9, 11, 0.75)';
+                            ctx.beginPath();
+                            ctx.roundRect(drawX + 10, drawY + 10, 56, 22, 6);
+                            ctx.fill();
+                            ctx.fillStyle = '#f4f4f5';
+                            ctx.fillText('修復前', drawX + 21, drawY + 25);
+                        }
+                        // 修復後標籤
+                        if ((drawX + drawW) - splitScreenX > 75) {
+                            ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
+                            ctx.beginPath();
+                            ctx.roundRect(drawX + drawW - 66, drawY + 10, 56, 22, 6);
+                            ctx.fill();
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillText('修復後', drawX + drawW - 55, drawY + 25);
+                        }
+                    }
+                    ctx.restore();
+                }
+            }
+
+            // 3. 繪製橫線選取範圍輔助標示框
+            if (state.showGuide) {
+                const topImgY = state.lineY - state.lineHeight / 2;
+                const botImgY = state.lineY + state.lineHeight / 2;
+                
+                const screenTopY = drawY + topImgY * state.zoom;
+                const screenBotY = drawY + botImgY * state.zoom;
+                const boxH = Math.max(4, screenBotY - screenTopY);
+
+                ctx.save();
+                // 淡綠色選區底色
+                ctx.fillStyle = 'rgba(16, 185, 129, 0.12)';
+                ctx.fillRect(drawX, screenTopY, drawW, boxH);
+
+                // 上下虛線邊界
+                ctx.strokeStyle = 'rgba(52, 211, 153, 0.85)';
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([6, 4]);
+                
+                ctx.beginPath();
+                ctx.moveTo(drawX, screenTopY);
+                ctx.lineTo(drawX + drawW, screenTopY);
+                ctx.moveTo(drawX, screenBotY);
+                ctx.lineTo(drawX + drawW, screenBotY);
+                ctx.stroke();
+
+                // 左右邊緣調整控制點
+                ctx.setLineDash([]);
+                ctx.fillStyle = '#10b981';
+                const midY = (screenTopY + screenBotY) / 2;
+                ctx.fillRect(drawX - 4, midY - 10, 8, 20);
+                ctx.fillRect(drawX + drawW - 4, midY - 10, 8, 20);
+                ctx.restore();
+            }
+        }
+
+        // 自動縮放圖片以適合目前螢幕視窗
+        function fitCanvasToScreen() {
+            const rect = canvasWrapper.getBoundingClientRect();
+            const padding = 48;
+            const availW = Math.max(200, rect.width - padding);
+            const availH = Math.max(200, rect.height - padding);
+            
+            const scaleX = availW / state.imgWidth;
+            const scaleY = availH / state.imgHeight;
+            state.zoom = Math.min(scaleX, scaleY, 1.5);
+            state.panX = 0;
+            state.panY = 0;
+            updateZoomLabel();
+            renderViewport();
+        }
+
+        function updateZoomLabel() {
+            document.getElementById('zoom-label').textContent = `${Math.round(state.zoom * 100)}%`;
+        }
+
+        // 座標轉換：螢幕座標 -> 原圖像素座標
+        function screenToImageCoords(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const sx = clientX - rect.left;
+            const sy = clientY - rect.top;
+
+            const drawW = state.imgWidth * state.zoom;
+            const drawH = state.imgHeight * state.zoom;
+            const drawX = (canvas.width - drawW) / 2 + state.panX;
+            const drawY = (canvas.height - drawH) / 2 + state.panY;
+
+            const imgX = (sx - drawX) / state.zoom;
+            const imgY = (sy - drawY) / state.zoom;
+            return { sx, sy, imgX, imgY, drawX, drawY, drawW, drawH };
+        }
+
+        // 滑鼠與觸控互動處理
+        function handlePointerDown(clientX, clientY) {
+            const coords = screenToImageCoords(clientX, clientY);
+            state.isDragging = true;
+            state.dragStartX = coords.sx;
+            state.dragStartY = coords.sy;
+
+            // 1. 優先檢查係咪按中對比分割線 (左右 18px 容差)
+            if (state.showSplit) {
+                const splitScreenX = coords.drawX + coords.drawW * state.splitRatio;
+                if (Math.abs(coords.sx - splitScreenX) <= 18) {
+                    state.dragType = 'split';
+                    return;
+                }
+            }
+
+            // 2. 如果係拖曳畫布模式或者按住空白鍵
+            if (state.interactionMode === 'pan' || state.spacePressed) {
+                state.dragType = 'pan';
+                state.initialPanX = state.panX;
+                state.initialPanY = state.panY;
+                canvasWrapper.style.cursor = 'grabbing';
+                return;
+            }
+
+            // 3. 選取橫線位置模式
+            if (coords.imgY >= 0 && coords.imgY <= state.imgHeight) {
+                const topImgY = state.lineY - state.lineHeight / 2;
+                const botImgY = state.lineY + state.lineHeight / 2;
+                const tol = 10 / state.zoom;
+
+                if (Math.abs(coords.imgY - topImgY) <= tol) {
+                    state.dragType = 'line-top';
+                    state.initialLineY = state.lineY;
+                    state.initialLineHeight = state.lineHeight;
+                } else if (Math.abs(coords.imgY - botImgY) <= tol) {
+                    state.dragType = 'line-bottom';
+                    state.initialLineY = state.lineY;
+                    state.initialLineHeight = state.lineHeight;
+                } else {
+                    // 直接點擊或拖曳新位置
+                    state.dragType = 'line-move';
+                    state.lineY = Math.round(Math.max(0, Math.min(state.imgHeight - 1, coords.imgY)));
+                    syncSlidersFromState();
+                    processRepair();
+                }
+            }
+        }
+
+        function handlePointerMove(clientX, clientY) {
+            const coords = screenToImageCoords(clientX, clientY);
+
+            // 未按下時更新滑鼠游標提示
+            if (!state.isDragging) {
+                if (state.showSplit) {
+                    const splitScreenX = coords.drawX + coords.drawW * state.splitRatio;
+                    if (Math.abs(coords.sx - splitScreenX) <= 16) {
+                        canvasWrapper.style.cursor = 'ew-resize';
+                        return;
+                    }
+                }
+                if (state.interactionMode === 'pan' || state.spacePressed) {
+                    canvasWrapper.style.cursor = 'grab';
+                    return;
+                }
+                const topImgY = state.lineY - state.lineHeight / 2;
+                const botImgY = state.lineY + state.lineHeight / 2;
+                const tol = 10 / state.zoom;
+                if (Math.abs(coords.imgY - topImgY) <= tol || Math.abs(coords.imgY - botImgY) <= tol) {
+                    canvasWrapper.style.cursor = 'ns-resize';
+                } else {
+                    canvasWrapper.style.cursor = 'crosshair';
+                }
+                return;
+            }
+
+            // 拖曳進行中
+            if (state.dragType === 'split') {
+                const newRatio = (coords.sx - coords.drawX) / coords.drawW;
+                state.splitRatio = Math.max(0.02, Math.min(0.98, newRatio));
+                renderViewport();
+            } else if (state.dragType === 'pan') {
+                state.panX = state.initialPanX + (coords.sx - state.dragStartX);
+                state.panY = state.initialPanY + (coords.sy - state.dragStartY);
+                renderViewport();
+            } else if (state.dragType === 'line-move') {
+                state.lineY = Math.round(Math.max(0, Math.min(state.imgHeight - 1, coords.imgY)));
+                syncSlidersFromState();
+                processRepair();
+            } else if (state.dragType === 'line-top') {
+                const bottomEdge = state.initialLineY + state.initialLineHeight / 2;
+                const newTop = Math.min(bottomEdge - 2, Math.max(0, coords.imgY));
+                state.lineHeight = Math.round(Math.max(2, bottomEdge - newTop));
+                state.lineY = Math.round(newTop + state.lineHeight / 2);
+                syncSlidersFromState();
+                processRepair();
+            } else if (state.dragType === 'line-bottom') {
+                const topEdge = state.initialLineY - state.initialLineHeight / 2;
+                const newBottom = Math.max(topEdge + 2, Math.min(state.imgHeight - 1, coords.imgY));
+                state.lineHeight = Math.round(Math.max(2, newBottom - topEdge));
+                state.lineY = Math.round(topEdge + state.lineHeight / 2);
+                syncSlidersFromState();
+                processRepair();
+            }
+        }
+
+        function handlePointerUp() {
+            state.isDragging = false;
+            state.dragType = null;
+            if (state.interactionMode === 'pan' || state.spacePressed) {
+                canvasWrapper.style.cursor = 'grab';
+            }
+        }
+
+        // 綁定滑鼠事件
+        canvasWrapper.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
+            handlePointerDown(e.clientX, e.clientY);
+        });
+        window.addEventListener('mousemove', (e) => handlePointerMove(e.clientX, e.clientY));
+        window.addEventListener('mouseup', handlePointerUp);
+
+        // 綁定觸控事件 (支援手機/平板操作)
+        canvasWrapper.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                handlePointerDown(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+        canvasWrapper.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1) {
+                e.preventDefault();
+                handlePointerMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+        canvasWrapper.addEventListener('touchend', handlePointerUp);
+
+        // 滾輪縮放
+        canvasWrapper.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomFactor = e.deltaY < 0 ? 1.12 : 0.89;
+            state.zoom = Math.max(0.15, Math.min(8, state.zoom * zoomFactor));
+            updateZoomLabel();
+            renderViewport();
+        }, { passive: false });
+
+        // 空白鍵切換拖曳畫布
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !state.spacePressed) {
+                state.spacePressed = true;
+                canvasWrapper.style.cursor = 'grab';
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                state.spacePressed = false;
+                canvasWrapper.style.cursor = state.interactionMode === 'pan' ? 'grab' : 'crosshair';
+            }
+        });
+
+        // 綁定控制面板事件
+        sliderYPos.addEventListener('input', (e) => {
+            state.lineY = parseInt(e.target.value, 10);
+            valYPos.textContent = `${state.lineY} px`;
+            processRepair();
+        });
+
+        sliderHeight.addEventListener('input', (e) => {
+            state.lineHeight = parseInt(e.target.value, 10);
+            valHeight.textContent = `${state.lineHeight} px`;
+            processRepair();
+        });
+
+        sliderFeather.addEventListener('input', (e) => {
+            state.feather = parseInt(e.target.value, 10);
+            valFeather.textContent = `${state.feather} px`;
+            processRepair();
+        });
+
+        sliderBlend.addEventListener('input', (e) => {
+            state.blendRatio = parseInt(e.target.value, 10);
+            valBlend.textContent = `${state.blendRatio}%`;
+            processRepair();
+        });
+
+        sliderLuma.addEventListener('input', (e) => {
+            state.lumaBoost = parseInt(e.target.value, 10);
+            valLuma.textContent = `${state.lumaBoost >= 0 ? '+' : ''}${state.lumaBoost}%`;
+            processRepair();
+        });
+
+        sliderGrain.addEventListener('input', (e) => {
+            state.grainAmount = parseInt(e.target.value, 10);
+            valGrain.textContent = `${state.grainAmount}%`;
+            processRepair();
+        });
+
+        // 演算法單選按鈕
+        document.querySelectorAll('input[name="algorithm"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                state.algorithm = e.target.value;
+                const blendGroup = document.getElementById('blend-ratio-group');
+                blendGroup.style.opacity = state.algorithm === 'blend' ? '1' : '0.4';
+                blendGroup.style.pointerEvents = state.algorithm === 'blend' ? 'auto' : 'none';
+                processRepair();
+            });
+        });
+
+        // 輔助線開關
+        document.getElementById('chk-show-guide').addEventListener('change', (e) => {
+            state.showGuide = e.target.checked;
+            renderViewport();
+        });
+
+        // 智慧自動偵測按鈕
+        document.getElementById('btn-auto-detect').addEventListener('click', () => {
+            autoDetectHorizontalLine(false);
+        });
+
+        // 模式切換按鈕
+        const btnModeSelect = document.getElementById('mode-select');
+        const btnModePan = document.getElementById('mode-pan');
+        
+        btnModeSelect.addEventListener('click', () => {
+            state.interactionMode = 'select';
+            btnModeSelect.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white transition';
+            btnModePan.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition';
+            canvasWrapper.style.cursor = 'crosshair';
+        });
+
+        btnModePan.addEventListener('click', () => {
+            state.interactionMode = 'pan';
+            btnModePan.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white transition';
+            btnModeSelect.className = 'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-zinc-400 hover:text-zinc-200 transition';
+            canvasWrapper.style.cursor = 'grab';
+        });
+
+        // 縮放按鈕
+        document.getElementById('btn-zoom-in').addEventListener('click', () => {
+            state.zoom = Math.min(8, state.zoom * 1.25);
+            updateZoomLabel();
+            renderViewport();
+        });
+        document.getElementById('btn-zoom-out').addEventListener('click', () => {
+            state.zoom = Math.max(0.15, state.zoom * 0.8);
+            updateZoomLabel();
+            renderViewport();
+        });
+        document.getElementById('btn-zoom-fit').addEventListener('click', fitCanvasToScreen);
+
+        // 對比滑桿開關
+        const btnToggleSplit = document.getElementById('btn-toggle-split');
+        btnToggleSplit.addEventListener('click', () => {
+            state.showSplit = !state.showSplit;
+            if (state.showSplit) {
+                btnToggleSplit.className = 'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30';
+            } else {
+                btnToggleSplit.className = 'flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg bg-zinc-800 text-zinc-400 border border-zinc-700';
+            }
+            renderViewport();
+        });
+
+        // 圖片上傳處理
+        document.getElementById('file-upload').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    loadImageFromSource(img, false);
+                    showToast('相片已載入並完成初步自動去線！');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+            e.target.value = '';
+        });
+
+        // 下載修復後高畫質圖片
+        document.getElementById('btn-download').addEventListener('click', () => {
+            if (!repCanvas) return;
+            try {
+                const link = document.createElement('a');
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+                link.download = `repaired-photo-${timestamp}.png`;
+                link.href = repCanvas.toDataURL('image/png', 1.0);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('已匯出高畫質無損 PNG 修復圖片！');
+            } catch (err) {
+                showToast('匯出圖片時發生錯誤，請重試。');
+            }
+        });
+
+        // 視窗大小改變時重新渲染
+        window.addEventListener('resize', () => {
+            renderViewport();
+        });
+
+        // 啟動時載入示例圖片
+        window.onload = () => {
+            generateSampleImage();
+        };
+    </script>
+</body>
+</html>
